@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================
+// ENUMS
+// ============================
+
+enum UserRole {
+  ADMIN
+  USER
+  MODERATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+}
+
+// ============================
+// MODELS
+// ============================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String?  @unique
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  password  String
+  
+  role      UserRole   @default(USER)
+  status    UserStatus @default(PENDING)
+  
+  isEmailVerified Boolean   @default(false) @map("is_email_verified")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  
+  lastLoginAt DateTime? @map("last_login_at")
+  lastLoginIp String?   @map("last_login_ip")
+  
+  metadata Json?
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  
+  @@index([email])
+  @@index([username])
+  @@index([status])
+  @@index([role])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("users")
+}

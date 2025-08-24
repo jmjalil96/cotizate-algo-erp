@@ -15,7 +15,6 @@
 
     /* Emit */
     "outDir": "./dist",
-    "rootDir": "./src",
     "sourceMap": true,
     "removeComments": true,
     "noEmitOnError": true,
@@ -52,7 +51,7 @@
     "declarationMap": true,
     "types": ["node"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "prisma/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
   "ts-node": {
     "esm": true,

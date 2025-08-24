@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cotizate_postgres
+    restart: unless-stopped
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    environment:
+      POSTGRES_USER: ${DB_USER:-cotizate}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-cotizate_dev_2024}
+      POSTGRES_DB: ${DB_NAME:-cotizate_db}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-cotizate} -d ${DB_NAME:-cotizate_db}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - cotizate_network
+    command: >
+      postgres
+      -c shared_preload_libraries='pg_stat_statements'
+      -c pg_stat_statements.track=all
+      -c max_connections=100
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=4MB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
+
+  inbucket:
+    image: inbucket/inbucket:latest
+    container_name: cotizate_inbucket
+    restart: unless-stopped
+    ports:
+      - '${MAIL_SMTP_PORT:-2500}:2500'   # SMTP server
+      - '${MAIL_WEB_PORT:-9000}:9000'     # Web UI
+      - '${MAIL_POP3_PORT:-1100}:1100'   # POP3 server
+    networks:
+      - cotizate_network
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:9000/']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    environment:
+      INBUCKET_MAILBOXNAMING: full   # Use full email addresses as mailbox names
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  cotizate_network:
+    driver: bridge

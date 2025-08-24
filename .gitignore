@@ -1,0 +1,33 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker environment
+.env.docker
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker volumes
+postgres_data/
+
+# Logs
+*.log
+logs/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Temporary files
+tmp/
+temp/

@@ -23,7 +23,7 @@ const corsOptions: cors.CorsOptions = {
       return cb(null, true);
     }
 
-    return cb(new Error('Not allowed by CORS'), false);
+    return cb(new AppError(403, 'Not allowed by CORS', 'CORS_NOT_ALLOWED'), false);
   },
   // '*' cannot be used with credentials
   credentials: !!allowedOrigins,

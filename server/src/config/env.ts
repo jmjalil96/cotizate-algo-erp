@@ -26,6 +26,18 @@ const envSchema = z.object({
       { message: 'Must be "*" or comma-separated valid URLs' }
     )
     .default('http://localhost:3000'),
+  DATABASE_URL: z.string().url('Must be a valid PostgreSQL connection URL'),
+  DATABASE_URL_POOLED: z.string().url().optional(),
+  
+  // Email configuration
+  MAIL_HOST: z.string().default('localhost'),
+  MAIL_PORT: z.coerce.number().positive().default(2500),
+  MAIL_FROM: z.string().email('Must be a valid email address').default('noreply@example.com'),
+  MAIL_SECURE: z
+    .string()
+    .transform((val) => val === 'true')
+    .pipe(z.boolean())
+    .default(false),
 });
 
 const parseEnv = (): z.infer<typeof envSchema> => {
