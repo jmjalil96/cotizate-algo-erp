@@ -91,4 +91,4 @@ process.on('beforeExit', async () => {
 });
 
 // Export types for use throughout the application
-export type { User, UserRole, UserStatus, Prisma } from '@prisma/client';
+export type { User, Organization, Role, Permission, Profile, Prisma } from '@prisma/client';

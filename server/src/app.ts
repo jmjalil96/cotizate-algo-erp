@@ -5,6 +5,7 @@ import { errorHandler, notFoundHandler } from './config/middleware/error.js';
 import { applyLogging } from './config/middleware/logging.js';
 import { applyRequestMiddleware } from './config/middleware/request.js';
 import { applySecurity } from './config/middleware/security.js';
+import authRoutes from './features/auth/routes/auth.routes.js';
 
 const app: Express = express();
 
@@ -24,6 +25,9 @@ applyLogging(app);
 app.get(`${env.API_PREFIX}/healthz`, (_req: Request, res: Response) => {
   res.json({ ok: true });
 });
+
+// Auth routes
+app.use(`${env.API_PREFIX}/auth`, authRoutes);
 
 app.get('/', (_req: Request, res: Response) => {
   res.json({ message: 'Server is running!' });

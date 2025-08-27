@@ -13,54 +13,230 @@ datasource db {
 }
 
 // ============================
-// ENUMS
-// ============================
-
-enum UserRole {
-  ADMIN
-  USER
-  MODERATOR
-}
-
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-  PENDING
-}
-
-// ============================
 // MODELS
 // ============================
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  username  String?  @unique
-  firstName String   @map("first_name")
-  lastName  String   @map("last_name")
-  password  String
-  
-  role      UserRole   @default(USER)
-  status    UserStatus @default(PENDING)
-  
-  isEmailVerified Boolean   @default(false) @map("is_email_verified")
-  emailVerifiedAt DateTime? @map("email_verified_at")
-  
-  lastLoginAt DateTime? @map("last_login_at")
-  lastLoginIp String?   @map("last_login_ip")
-  
-  metadata Json?
-  
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+model Organization {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  isActive  Boolean   @default(true) @map("is_active")
   deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  
+  users User[]
+  roles Role[]
+  
+  @@index([slug])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("organizations")
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  passwordHash        String    @map("password_hash")
+  organizationId      String    @map("organization_id")
+  isActive            Boolean   @default(true) @map("is_active")
+  emailVerified       Boolean   @default(false) @map("email_verified")
+  emailVerifiedAt     DateTime? @map("email_verified_at")
+  deletedAt           DateTime? @map("deleted_at")
+  mfaSecret           String?   @map("mfa_secret")
+  passwordChangedAt   DateTime  @default(now()) @map("password_changed_at")
+  requiresOtp         Boolean   @default(false) @map("requires_otp")
+  failedLoginCount    Int       @default(0) @map("failed_login_count")
+  lastLoginAt         DateTime? @map("last_login_at")
+  lastLoginIp         String?   @map("last_login_ip")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  profile                  Profile?
+  userRole                 UserRole?
+  refreshTokens            RefreshToken[]
+  emailVerificationTokens  EmailVerificationToken[]
+  otpAttempt               OtpAttempt?
+  createdRoles             Role[]                    @relation("CreatedRoles")
+  assignedUserRoles        UserRole[]                @relation("AssignedBy")
+  auditLogs                AuditLog[]
   
   @@index([email])
-  @@index([username])
-  @@index([status])
-  @@index([role])
-  @@index([createdAt])
+  @@index([organizationId])
+  @@index([isActive])
   @@index([deletedAt])
   @@map("users")
+}
+
+model Profile {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  mobileNumber String?  @map("mobile_number")
+  timezone     String   @default("America/Quito")
+  jobTitle     String?  @map("job_title")
+  department   String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("profiles")
+}
+
+model Role {
+  id             String   @id @default(uuid())
+  organizationId String?  @map("organization_id")
+  name           String
+  description    String
+  isSystem       Boolean  @default(false) @map("is_system")
+  createdById    String?  @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  
+  organization    Organization?    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy       User?            @relation("CreatedRoles", fields: [createdById], references: [id], onDelete: Restrict)
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+  
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([isSystem])
+  @@map("roles")
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  resource  String
+  action    String
+  scope     String   @default("own")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  rolePermissions RolePermission[]
+  
+  @@unique([resource, action, scope])
+  @@index([resource])
+  @@index([action])
+  @@index([scope])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String   @id @default(uuid())
+  roleId       String   @map("role_id")
+  permissionId String   @map("permission_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  roleId      String   @map("role_id")
+  createdById String?  @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role  @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  createdBy User? @relation("AssignedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model RefreshToken {
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  tokenHash         String    @unique @map("token_hash")
+  familyId          String    @map("family_id")
+  generation        Int       @default(1)
+  parentTokenId     String?   @map("parent_token_id")
+  deviceName        String    @map("device_name")
+  deviceFingerprint String    @map("device_fingerprint")
+  ipAddress         String    @map("ip_address")
+  userAgent         String    @map("user_agent")
+  expiresAt         DateTime  @map("expires_at")
+  revokedAt         DateTime? @map("revoked_at")
+  lastUsedAt        DateTime? @map("last_used_at")
+  used              Boolean   @default(false)
+  reuseDetected     Boolean   @default(false) @map("reuse_detected")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentToken RefreshToken? @relation("TokenFamily", fields: [parentTokenId], references: [id])
+  childTokens RefreshToken[] @relation("TokenFamily")
+  
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @map("token_hash")
+  isActive  Boolean   @default(true) @map("is_active")
+  expiresAt DateTime  @default(dbgenerated("(CURRENT_TIMESTAMP + INTERVAL '24 hours')")) @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, tokenHash])
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+}
+
+model OtpAttempt {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  attemptCount Int      @default(0) @map("attempt_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("otp_attempts")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?  @map("user_id")
+  action       String
+  resourceType String?  @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  beforeData   Json?    @map("before_data")
+  afterData    Json?    @map("after_data")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

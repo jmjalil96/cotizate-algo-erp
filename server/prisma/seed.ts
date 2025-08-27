@@ -1,76 +1,60 @@
-import { PrismaClient, UserRole, UserStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Simple password hashing for development - use bcrypt or argon2 in production
-async function hashPassword(password: string): Promise<string> {
-  // This is a placeholder - in production use bcrypt or argon2
-  return Buffer.from(password).toString('base64');
-}
+// Password hashing function - kept for future use when seeding users
+// async function hashPassword(password: string): Promise<string> {
+//   return bcrypt.hash(password, 12);
+// }
 
 async function cleanDatabase(): Promise<void> {
   console.info('🧹 Cleaning database...');
   
   // Delete in reverse order of dependencies
+  await prisma.auditLog.deleteMany();
+  await prisma.otpAttempt.deleteMany();
+  await prisma.emailVerificationToken.deleteMany();
+  await prisma.refreshToken.deleteMany();
+  await prisma.userRole.deleteMany();
+  await prisma.rolePermission.deleteMany();
+  await prisma.permission.deleteMany();
+  await prisma.role.deleteMany();
+  await prisma.profile.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.organization.deleteMany();
   
   console.info('✅ Database cleaned');
 }
 
-async function seedUsers(): Promise<void> {
-  console.info('🌱 Seeding users...');
+async function seedSystemRoleAndPermissions(): Promise<void> {
+  console.info('🌱 Seeding system role and permissions...');
   
-  // Create admin user
-  const adminUser = await prisma.user.create({
+  // Create the system owner permission (*:* - all resources, all actions)
+  const ownerPermission = await prisma.permission.create({
     data: {
-      email: 'admin@cotizate.com',
-      username: 'admin',
-      firstName: 'Admin',
-      lastName: 'User',
-      password: await hashPassword('admin123456'),
-      role: UserRole.ADMIN,
-      status: UserStatus.ACTIVE,
-      isEmailVerified: true,
-      emailVerifiedAt: new Date(),
+      resource: '*',
+      action: '*',
+      scope: 'all',
     },
   });
   
-  console.info(`✅ Created admin user: ${adminUser.email}`);
+  console.info('✅ Created owner permission (*:*)');
   
-  // Create test user
-  const testUser = await prisma.user.create({
+  // Create the system owner role
+  await prisma.role.create({
     data: {
-      email: 'user@cotizate.com',
-      username: 'testuser',
-      firstName: 'Test',
-      lastName: 'User',
-      password: await hashPassword('user123456'),
-      role: UserRole.USER,
-      status: UserStatus.ACTIVE,
-      isEmailVerified: true,
-      emailVerifiedAt: new Date(),
+      name: 'owner',
+      description: 'System owner with full access to all resources',
+      isSystem: true,
+      rolePermissions: {
+        create: {
+          permissionId: ownerPermission.id,
+        },
+      },
     },
   });
   
-  console.info(`✅ Created test user: ${testUser.email}`);
-  
-  // Create pending user
-  const pendingUser = await prisma.user.create({
-    data: {
-      email: 'pending@cotizate.com',
-      username: 'pendinguser',
-      firstName: 'Pending',
-      lastName: 'User',
-      password: await hashPassword('pending123456'),
-      role: UserRole.USER,
-      status: UserStatus.PENDING,
-      isEmailVerified: false,
-    },
-  });
-  
-  console.info(`✅ Created pending user: ${pendingUser.email}`);
-  
-  console.info('✅ Users seeded successfully');
+  console.info('✅ Created system owner role');
 }
 
 async function main(): Promise<void> {
@@ -81,8 +65,8 @@ async function main(): Promise<void> {
     // Clean database first
     await cleanDatabase();
     
-    // Seed data
-    await seedUsers();
+    // Seed system role and permissions
+    await seedSystemRoleAndPermissions();
     
     console.info('🎉 Seed completed successfully!');
   } catch (error) {

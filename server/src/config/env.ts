@@ -26,6 +26,7 @@ const envSchema = z.object({
       { message: 'Must be "*" or comma-separated valid URLs' }
     )
     .default('http://localhost:3000'),
+  FRONTEND_URL: z.string().url('Must be a valid URL').default('http://localhost:3000'),
   DATABASE_URL: z.string().url('Must be a valid PostgreSQL connection URL'),
   DATABASE_URL_POOLED: z.string().url().optional(),
   

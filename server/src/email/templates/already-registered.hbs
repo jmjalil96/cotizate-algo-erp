@@ -1,67 +1,70 @@
 <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 24px; font-weight: 600;">
-  Password Reset Request
+  Account Already Exists
 </h2>
 
 <p style="margin: 0 0 20px 0; color: #666666; font-size: 16px; line-height: 24px;">
-  Hi {{name}},
+  Hello,
 </p>
 
 <p style="margin: 0 0 20px 0; color: #666666; font-size: 16px; line-height: 24px;">
-  We received a request to reset the password for your account. If you didn't make this request, you can safely ignore this email.
+  Someone attempted to create a new account using this email address. However, an account with this email already exists in our system.
 </p>
 
 <p style="margin: 0 0 30px 0; color: #666666; font-size: 16px; line-height: 24px;">
-  To reset your password, click the button below:
+  If this was you, you can access your existing account using the options below:
 </p>
 
 <table border="0" cellspacing="0" cellpadding="0" width="100%">
   <tr>
-    <td align="center" style="padding: 0 0 30px 0;">
-      <a href="{{resetUrl}}" style="display: inline-block; padding: 14px 30px; background-color: #4F46E5; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 6px;">
-        Reset Password
+    <td align="center" style="padding: 0 0 20px 0;">
+      <a href="{{loginUrl}}" style="display: inline-block; padding: 14px 30px; background-color: #4F46E5; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 6px;">
+        Go to Login
       </a>
     </td>
   </tr>
 </table>
 
-<p style="margin: 0 0 20px 0; color: #999999; font-size: 14px; line-height: 20px;">
-  Or copy and paste this link into your browser:
+<p style="margin: 0 0 20px 0; color: #666666; font-size: 16px; line-height: 24px;">
+  Forgot your password? No problem! You can reset it here:
 </p>
-<p style="margin: 0 0 30px 0; color: #4F46E5; font-size: 14px; line-height: 20px; word-break: break-all;">
-  {{resetUrl}}
+
+<p style="margin: 0 0 30px 0; text-align: center;">
+  <a href="{{resetPasswordUrl}}" style="color: #4F46E5; font-size: 16px; text-decoration: underline;">
+    Reset Your Password
+  </a>
 </p>
 
 <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 30px 0;">
   <p style="margin: 0; color: #991b1b; font-size: 14px; font-weight: 600;">
-    Important Security Information
+    Security Notice
   </p>
   <p style="margin: 10px 0 0 0; color: #7f1d1d; font-size: 14px; line-height: 20px;">
-    This link will expire in {{#if expirationHours}}{{expirationHours}} hours{{else}}24 hours{{/if}}. 
-    For security reasons, you can only use this link once.
+    If you didn't attempt to create a new account, someone may be trying to access your information. 
+    We recommend you secure your account by changing your password immediately.
   </p>
 </div>
 
 {{#if ipAddress}}
 <div style="background-color: #f8f9fa; border-radius: 6px; padding: 20px; margin: 30px 0;">
   <p style="margin: 0 0 10px 0; color: #666666; font-size: 14px; font-weight: 600;">
-    Request Details:
+    Attempt Details:
   </p>
   <ul style="margin: 0; padding-left: 20px; color: #666666; font-size: 14px; line-height: 20px;">
-    <li>Time: {{formatDate requestTime}} at {{formatTime requestTime}}</li>
+    <li>Email used: {{email}}</li>
     {{#if ipAddress}}<li>IP Address: {{ipAddress}}</li>{{/if}}
-    {{#if browser}}<li>Browser: {{browser}}</li>{{/if}}
+    {{#if requestTime}}<li>Time: {{requestTime}}</li>{{/if}}
     {{#if location}}<li>Location: {{location}}</li>{{/if}}
   </ul>
 </div>
 {{/if}}
 
 <p style="margin: 0 0 20px 0; color: #666666; font-size: 16px; line-height: 24px;">
-  If you didn't request a password reset, please let us know immediately by replying to this email or contacting our support team.
+  Your account security is important to us. If you have any concerns or need assistance, please don't hesitate to contact our support team.
 </p>
 
 {{#if supportEmail}}
 <p style="margin: 0; color: #666666; font-size: 16px; line-height: 24px;">
-  Need help? Contact us at 
+  Contact support: 
   <a href="mailto:{{supportEmail}}" style="color: #4F46E5; text-decoration: none;">{{supportEmail}}</a>
 </p>
 {{/if}}

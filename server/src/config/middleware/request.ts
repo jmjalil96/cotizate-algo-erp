@@ -35,20 +35,40 @@ const attachRequestId: RequestHandler = (req, res, next) => {
 };
 
 /**
+ * Fields that should not be sanitized (passwords, OTPs, etc.)
+ */
+const SANITIZATION_EXCLUDED_FIELDS = new Set([
+  'password',
+  'newPassword',
+  'confirmPassword',
+  'currentPassword',
+  'otp',
+  'otpCode',
+  'token',
+  'refreshToken',
+  'accessToken',
+]);
+
+/**
  * Sanitize string values to prevent XSS attacks
  */
-function sanitizeValue(value: unknown): unknown {
+function sanitizeValue(value: unknown, key?: string): unknown {
+  // Skip sanitization for excluded fields
+  if (key && SANITIZATION_EXCLUDED_FIELDS.has(key)) {
+    return value;
+  }
+  
   if (typeof value === 'string') {
     // Remove XSS attempts and trim whitespace
     return xss(value.trim()).replace(/\0/g, ''); // Also strip null bytes
   }
   if (Array.isArray(value)) {
-    return value.map(sanitizeValue);
+    return value.map((item) => sanitizeValue(item));
   }
   if (value && typeof value === 'object') {
     const sanitized: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(value)) {
-      sanitized[key] = sanitizeValue(val);
+    for (const [objKey, val] of Object.entries(value)) {
+      sanitized[objKey] = sanitizeValue(val, objKey);
     }
     return sanitized;
   }
