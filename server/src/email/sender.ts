@@ -26,24 +26,28 @@ export const getTransporter = (): Transporter => {
       host: env.MAIL_HOST,
       port: env.MAIL_PORT,
       secure: env.MAIL_SECURE,
-      ...(env.MAIL_USER && env.MAIL_PASS && {
-        auth: {
-          user: env.MAIL_USER,
-          pass: env.MAIL_PASS,
-        }
-      }),
+      ...(env.MAIL_USER &&
+        env.MAIL_PASS && {
+          auth: {
+            user: env.MAIL_USER,
+            pass: env.MAIL_PASS,
+          },
+        }),
       tls: {
         rejectUnauthorized: env.NODE_ENV === 'production',
       },
     };
 
     transporter = nodemailer.createTransport(config);
-    
-    logger.info({
-      host: env.MAIL_HOST,
-      port: env.MAIL_PORT,
-      secure: env.MAIL_SECURE,
-    }, 'Email transporter configured');
+
+    logger.info(
+      {
+        host: env.MAIL_HOST,
+        port: env.MAIL_PORT,
+        secure: env.MAIL_SECURE,
+      },
+      'Email transporter configured'
+    );
   }
 
   return transporter as Transporter;
@@ -51,7 +55,7 @@ export const getTransporter = (): Transporter => {
 
 export const sendEmail = async (options: SendEmailOptions): Promise<EmailJobResult> => {
   const transport = getTransporter();
-  
+
   try {
     const result = await transport.sendMail({
       from: options.from ?? env.MAIL_FROM,
@@ -61,13 +65,16 @@ export const sendEmail = async (options: SendEmailOptions): Promise<EmailJobResu
       text: options.text,
     });
 
-    logger.debug({
-      messageId: result.messageId,
-      accepted: result.accepted,
-      rejected: result.rejected,
-      to: options.to,
-      subject: options.subject,
-    }, 'Email sent successfully');
+    logger.debug(
+      {
+        messageId: result.messageId,
+        accepted: result.accepted,
+        rejected: result.rejected,
+        to: options.to,
+        subject: options.subject,
+      },
+      'Email sent successfully'
+    );
 
     return {
       messageId: result.messageId,
@@ -75,29 +82,27 @@ export const sendEmail = async (options: SendEmailOptions): Promise<EmailJobResu
       rejected: result.rejected as string[],
     };
   } catch (error) {
-    logger.error({
-      error,
-      to: options.to,
-      subject: options.subject,
-    }, 'Failed to send email');
+    logger.error(
+      {
+        error,
+        to: options.to,
+        subject: options.subject,
+      },
+      'Failed to send email'
+    );
 
     if (error instanceof Error) {
       const statusCode = error.message.includes('ECONNREFUSED') ? 503 : 500;
-      const code = error.message.includes('ECONNREFUSED') ? 'EMAIL_SERVICE_UNAVAILABLE' : 'EMAIL_SEND_FAILED';
-      
-      throw new AppError(
-        statusCode,
-        `Failed to send email: ${error.message}`,
-        code,
-        { originalError: error.message }
-      );
+      const code = error.message.includes('ECONNREFUSED')
+        ? 'EMAIL_SERVICE_UNAVAILABLE'
+        : 'EMAIL_SEND_FAILED';
+
+      throw new AppError(statusCode, `Failed to send email: ${error.message}`, code, {
+        originalError: error.message,
+      });
     }
-    
-    throw new AppError(
-      500,
-      'Failed to send email',
-      'EMAIL_SEND_FAILED'
-    );
+
+    throw new AppError(500, 'Failed to send email', 'EMAIL_SEND_FAILED');
   }
 };
 

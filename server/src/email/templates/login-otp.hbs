@@ -1,0 +1,67 @@
+<h2 style='margin: 0 0 20px 0; color: #333333; font-size: 24px; font-weight: 600;'>
+  Login Verification Required
+</h2>
+
+<p style='margin: 0 0 20px 0; color: #666666; font-size: 16px; line-height: 24px;'>
+  Hi
+  {{firstName}},
+</p>
+
+<p style='margin: 0 0 20px 0; color: #666666; font-size: 16px; line-height: 24px;'>
+  Too many failed login attempts have been detected on your account. For your security, we need to
+  verify it's really you.
+</p>
+
+<table border='0' cellspacing='0' cellpadding='0' width='100%'>
+  <tr>
+    <td align='center' style='padding: 30px 0;'>
+      <div
+        style='background-color: #f3f4f6; border: 2px dashed #9ca3af; border-radius: 8px; padding: 25px; display: inline-block;'
+      >
+        <p
+          style='margin: 0 0 10px 0; color: #6b7280; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;'
+        >
+          Your Verification Code
+        </p>
+        <p
+          style='margin: 0; color: #111827; font-size: 36px; font-weight: 700; letter-spacing: 8px;'
+        >
+          {{otpCode}}
+        </p>
+      </div>
+    </td>
+  </tr>
+</table>
+
+<p style='margin: 0 0 10px 0; color: #666666; font-size: 14px; line-height: 20px;'>
+  <strong style='color: #ef4444;'>Important:</strong>
+  This code expires in
+  <strong>{{expiryMinutes}} minutes</strong>
+</p>
+
+<div
+  style='background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 20px 0;'
+>
+  <p style='margin: 0 0 10px 0; color: #991b1b; font-size: 16px; font-weight: 600;'>
+    Login Attempt Details:
+  </p>
+  <ul style='margin: 0; padding-left: 20px; color: #7f1d1d; font-size: 14px; line-height: 20px;'>
+    <li><strong>Time:</strong> {{requestTime}}</li>
+    <li><strong>IP Address:</strong> {{ipAddress}}</li>
+    <li><strong>Device:</strong> {{deviceName}}</li>
+  </ul>
+</div>
+
+<p
+  style='margin: 20px 0; padding: 16px; background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px; color: #78350f; font-size: 14px; line-height: 20px;'
+>
+  <strong>⚠️ Security Alert:</strong>
+  If you didn't attempt to log in, your password may be compromised. Please change your password
+  immediately and contact support.
+</p>
+
+<p style='margin: 0 0 20px 0; color: #9ca3af; font-size: 12px; line-height: 18px;'>
+  This security measure helps protect your account from unauthorized access. After
+  {{maxAttempts}}
+  failed login attempts, we require additional verification.
+</p>

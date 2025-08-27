@@ -43,18 +43,13 @@ model User {
   emailVerified       Boolean   @default(false) @map("email_verified")
   emailVerifiedAt     DateTime? @map("email_verified_at")
   deletedAt           DateTime? @map("deleted_at")
-  mfaSecret           String?   @map("mfa_secret")
-  passwordChangedAt   DateTime  @default(now()) @map("password_changed_at")
-  requiresOtp         Boolean   @default(false) @map("requires_otp")
-  failedLoginCount    Int       @default(0) @map("failed_login_count")
-  lastLoginAt         DateTime? @map("last_login_at")
-  lastLoginIp         String?   @map("last_login_ip")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
   
   organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   profile                  Profile?
   userRole                 UserRole?
+  loginSecurity            LoginSecurity?
   refreshTokens            RefreshToken[]
   emailVerificationTokens  EmailVerificationToken[]
   otpAttempt               OtpAttempt?
@@ -204,6 +199,37 @@ model EmailVerificationToken {
   @@index([tokenHash])
   @@index([expiresAt])
   @@map("email_verification_tokens")
+}
+
+model LoginSecurity {
+  id                  String    @id @default(uuid())
+  userId              String    @unique @map("user_id")
+  
+  // MFA and password
+  mfaSecret           String?   @map("mfa_secret")
+  passwordChangedAt   DateTime  @default(now()) @map("password_changed_at")
+  
+  // Login attempts tracking
+  requiresOtp         Boolean   @default(false) @map("requires_otp")
+  failedLoginCount    Int       @default(0) @map("failed_login_count")
+  
+  // Last login info
+  lastLoginAt         DateTime? @map("last_login_at")
+  lastLoginIp         String?   @map("last_login_ip")
+  
+  // Login OTP fields
+  loginOtpHash        String?   @map("login_otp_hash")
+  loginOtpExpiresAt   DateTime? @map("login_otp_expires_at")
+  loginOtpSentAt      DateTime? @map("login_otp_sent_at")
+  
+  // Audit fields
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("login_security")
 }
 
 model OtpAttempt {

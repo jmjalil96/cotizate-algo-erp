@@ -1,5 +1,7 @@
 import { PrismaClient, User, Prisma } from '@prisma/client';
 
+import type { UserWithDetails } from '../domain/session/session.dto.js';
+
 export class UserRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -7,6 +9,55 @@ export class UserRepository {
     return this.prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
+  }
+
+  async findWithDetails(email: string): Promise<UserWithDetails | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            isActive: true,
+          },
+        },
+        profile: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        userRole: {
+          select: {
+            role: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                rolePermissions: {
+                  select: {
+                    permission: {
+                      select: {
+                        resource: true,
+                        action: true,
+                        scope: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user || !user.profile || !user.userRole) {
+      return null;
+    }
+
+    return user as unknown as UserWithDetails;
   }
 
   async create(
@@ -18,7 +69,7 @@ export class UserRepository {
     tx?: Prisma.TransactionClient
   ): Promise<User> {
     const client = tx ?? this.prisma;
-    
+
     return client.user.create({
       data: {
         email: data.email.toLowerCase(),
@@ -28,12 +79,9 @@ export class UserRepository {
     });
   }
 
-  async markEmailVerified(
-    userId: string,
-    tx?: Prisma.TransactionClient
-  ): Promise<void> {
+  async markEmailVerified(userId: string, tx?: Prisma.TransactionClient): Promise<void> {
     const client = tx ?? this.prisma;
-    
+
     await client.user.update({
       where: { id: userId },
       data: {

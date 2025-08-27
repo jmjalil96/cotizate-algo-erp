@@ -43,12 +43,9 @@ export const loadTemplate = (templateName: string): string => {
     return readFileSync(templatePath, 'utf8');
   } catch (error) {
     logger.error({ error, templateName }, 'Failed to load template');
-    throw new AppError(
-      500,
-      `Template not found: ${templateName}`,
-      'TEMPLATE_NOT_FOUND',
-      { templateName }
-    );
+    throw new AppError(500, `Template not found: ${templateName}`, 'TEMPLATE_NOT_FOUND', {
+      templateName,
+    });
   }
 };
 
@@ -88,17 +85,15 @@ export const renderTemplate = (templateName: string, data: Record<string, unknow
     return html;
   } catch (error) {
     logger.error({ error, templateName, data }, 'Failed to render template');
-    
+
     if (error instanceof AppError) {
       throw error;
     }
-    
-    throw new AppError(
-      500,
-      'Failed to render email template',
-      'TEMPLATE_RENDER_FAILED',
-      { templateName, error: error instanceof Error ? error.message : 'Unknown error' }
-    );
+
+    throw new AppError(500, 'Failed to render email template', 'TEMPLATE_RENDER_FAILED', {
+      templateName,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 };
 

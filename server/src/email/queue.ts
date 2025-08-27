@@ -45,7 +45,9 @@ const queueOptions: QueueOptions = {
 
 export const emailQueue = new Queue<EmailJobData, EmailJobResult>('email-queue', queueOptions);
 
-export const createEmailWorker = (processor: Worker<EmailJobData, EmailJobResult>['processFn']): Worker<EmailJobData, EmailJobResult> => {
+export const createEmailWorker = (
+  processor: Worker<EmailJobData, EmailJobResult>['processFn']
+): Worker<EmailJobData, EmailJobResult> => {
   return new Worker<EmailJobData, EmailJobResult>('email-queue', processor, {
     connection: redisConnection,
     concurrency: env.QUEUE_CONCURRENCY,

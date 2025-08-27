@@ -18,7 +18,7 @@ export class OrganizationRepository {
     tx?: Prisma.TransactionClient
   ): Promise<Organization> {
     const client = tx ?? this.prisma;
-    
+
     return client.organization.create({
       data: {
         name: data.name,

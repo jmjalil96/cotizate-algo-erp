@@ -7,11 +7,11 @@ import { AUTH } from '../auth.constants.js';
  */
 export function generateOTP(length: number = AUTH.OTP.LENGTH): string {
   let otp = '';
-  
+
   for (let i = 0; i < length; i++) {
     otp += randomInt(0, 10).toString();
   }
-  
+
   return otp;
 }
 

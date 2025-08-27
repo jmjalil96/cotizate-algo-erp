@@ -7,6 +7,7 @@ import { logger } from '../../../../config/logger.js';
 import { emailQueue } from '../../../../email/queue.js';
 import { AuditLogRepository } from '../../repositories/audit-log.repository.js';
 import { EmailVerificationTokenRepository } from '../../repositories/email-verification-token.repository.js';
+import { LoginSecurityRepository } from '../../repositories/login-security.repository.js';
 import { OrganizationRepository } from '../../repositories/organization.repository.js';
 import { OtpAttemptRepository } from '../../repositories/otp-attempt.repository.js';
 import { ProfileRepository } from '../../repositories/profile.repository.js';
@@ -26,7 +27,6 @@ import {
 import type { RegisterRequestDto, RegisterResponseDto } from './registration.dto.js';
 import type { Logger } from 'pino';
 
-
 export class RegistrationService {
   constructor(
     private readonly prisma: PrismaClient,
@@ -37,7 +37,8 @@ export class RegistrationService {
     private readonly userRoleRepo: UserRoleRepository,
     private readonly emailTokenRepo: EmailVerificationTokenRepository,
     private readonly auditRepo: AuditLogRepository,
-    private readonly otpAttemptRepo: OtpAttemptRepository
+    private readonly otpAttemptRepo: OtpAttemptRepository,
+    private readonly loginSecurityRepo: LoginSecurityRepository
   ) {}
 
   async register(
@@ -48,18 +49,18 @@ export class RegistrationService {
     const log = context?.logger ?? logger;
     const { email, password, firstName, lastName, organizationName } = dto;
     const normalizedEmail = email.toLowerCase();
-    
+
     log.debug({ email: normalizedEmail, organizationName }, 'Starting registration process');
 
     // Step 1: Check if email already exists
     const existingUser = await this.userRepo.findByEmail(normalizedEmail);
-    
+
     if (existingUser) {
       log.warn(
         { email: normalizedEmail, existingUserId: existingUser.id },
         'Registration attempt with existing email'
       );
-      
+
       // Send "already registered" email in try-catch to prevent failures
       try {
         await emailQueue.add('already-registered', {
@@ -76,7 +77,10 @@ export class RegistrationService {
         });
         log.debug({ email: normalizedEmail }, 'Already-registered email queued');
       } catch (queueError) {
-        log.error({ error: queueError, email: normalizedEmail }, 'Failed to queue already-registered email');
+        log.error(
+          { error: queueError, email: normalizedEmail },
+          'Failed to queue already-registered email'
+        );
         // Continue anyway to prevent enumeration
       }
 
@@ -101,10 +105,7 @@ export class RegistrationService {
     log.debug({ organizationName }, 'Generating organization slug');
     let slug: string;
     try {
-      slug = await generateUniqueSlug(
-        organizationName,
-        (s) => this.orgRepo.existsBySlug(s)
-      );
+      slug = await generateUniqueSlug(organizationName, (s) => this.orgRepo.existsBySlug(s));
       log.debug({ organizationName, slug }, 'Organization slug generated successfully');
     } catch (error) {
       log.error({ error, organizationName }, 'Failed to generate unique organization slug');
@@ -125,10 +126,7 @@ export class RegistrationService {
       const result = await this.prisma.$transaction(async (tx) => {
         // Create organization
         log.debug({ organizationName, slug }, 'Creating organization');
-        const organization = await this.orgRepo.create(
-          { name: organizationName, slug },
-          tx
-        );
+        const organization = await this.orgRepo.create({ name: organizationName, slug }, tx);
 
         // Create user
         log.debug({ email: normalizedEmail, organizationId: organization.id }, 'Creating user');
@@ -180,6 +178,10 @@ export class RegistrationService {
         log.debug({ userId: user.id }, 'Creating OTP attempt record');
         await this.otpAttemptRepo.create(user.id, tx);
 
+        // Create login security record for user
+        log.debug({ userId: user.id }, 'Creating login security record');
+        await this.loginSecurityRepo.create({ userId: user.id }, tx);
+
         // Log registration
         log.debug({ userId: user.id }, 'Creating audit log entry');
         await this.auditRepo.logRegistration(
@@ -195,7 +197,7 @@ export class RegistrationService {
 
         return { user, organization };
       });
-      
+
       log.debug(
         { userId: result.user.id, organizationId: result.organization.id },
         'Registration transaction completed successfully'
@@ -218,7 +220,7 @@ export class RegistrationService {
             requestTime: new Date().toISOString(),
           },
         });
-        
+
         log.debug({ email: normalizedEmail }, 'Verification email queued');
       } catch (queueError) {
         // Log error but don't fail registration - user can request resend later
@@ -228,13 +230,13 @@ export class RegistrationService {
         );
         // Continue - registration was successful even if email failed
       }
-      
+
       log.info(
-        { 
+        {
           userId: result.user.id,
           organizationId: result.organization.id,
           email: normalizedEmail,
-          organizationSlug: result.organization.slug
+          organizationSlug: result.organization.slug,
         },
         'User registration successful'
       );
@@ -253,19 +255,19 @@ export class RegistrationService {
       // Check for unique constraint violation (race condition)
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         log.warn(
-          { 
+          {
             email: normalizedEmail,
             field: error.meta?.['target'],
-            code: error.code
+            code: error.code,
           },
           'Unique constraint violation during registration - likely race condition'
         );
-        
+
         // Treat as duplicate email - return success to prevent enumeration
         const emailHash = createHash('sha256').update(normalizedEmail).digest('hex');
         const fakeUserId = `${emailHash.slice(0, 8)}-${emailHash.slice(8, 12)}-${emailHash.slice(12, 16)}-${emailHash.slice(16, 20)}-${emailHash.slice(20, 32)}`;
         const fakeOrgId = `${emailHash.slice(32, 40)}-${emailHash.slice(40, 44)}-${emailHash.slice(44, 48)}-${emailHash.slice(48, 52)}-${emailHash.slice(52, 64)}`;
-        
+
         return {
           success: true,
           message: 'Registration successful. Please check your email for verification code.',
@@ -276,21 +278,23 @@ export class RegistrationService {
           },
         };
       }
-      
+
       log.error(
-        { 
+        {
           error: error instanceof Error ? error.message : 'Unknown error',
           email: normalizedEmail,
-          organizationName
+          organizationName,
         },
         'Registration transaction failed'
       );
-      
-      if (error instanceof EmailAlreadyExistsError || 
-          error instanceof OrganizationSlugExistsError) {
+
+      if (
+        error instanceof EmailAlreadyExistsError ||
+        error instanceof OrganizationSlugExistsError
+      ) {
         throw error;
       }
-      
+
       throw new RegistrationFailedError('Unable to complete registration. Please try again.');
     }
   }

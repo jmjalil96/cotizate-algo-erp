@@ -3,12 +3,9 @@ import { PrismaClient, EmailVerificationToken, Prisma } from '@prisma/client';
 export class EmailVerificationTokenRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async invalidateAllForUser(
-    userId: string,
-    tx?: Prisma.TransactionClient
-  ): Promise<void> {
+  async invalidateAllForUser(userId: string, tx?: Prisma.TransactionClient): Promise<void> {
     const client = tx ?? this.prisma;
-    
+
     await client.emailVerificationToken.updateMany({
       where: {
         userId,
@@ -30,7 +27,7 @@ export class EmailVerificationTokenRepository {
     tx?: Prisma.TransactionClient
   ): Promise<EmailVerificationToken> {
     const client = tx ?? this.prisma;
-    
+
     return client.emailVerificationToken.create({
       data: {
         userId: data.userId,
@@ -52,12 +49,9 @@ export class EmailVerificationTokenRepository {
     });
   }
 
-  async markAsUsed(
-    tokenId: string,
-    tx?: Prisma.TransactionClient
-  ): Promise<void> {
+  async markAsUsed(tokenId: string, tx?: Prisma.TransactionClient): Promise<void> {
     const client = tx ?? this.prisma;
-    
+
     await client.emailVerificationToken.update({
       where: { id: tokenId },
       data: {

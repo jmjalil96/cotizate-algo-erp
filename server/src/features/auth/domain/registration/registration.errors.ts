@@ -5,12 +5,7 @@ import { AppError } from '../../../../shared/errors.js';
  */
 export class EmailAlreadyExistsError extends AppError {
   constructor(email: string) {
-    super(
-      409,
-      'An account with this email already exists',
-      'EMAIL_ALREADY_EXISTS',
-      { email }
-    );
+    super(409, 'An account with this email already exists', 'EMAIL_ALREADY_EXISTS', { email });
     this.name = 'EmailAlreadyExistsError';
   }
 }
@@ -20,12 +15,9 @@ export class EmailAlreadyExistsError extends AppError {
  */
 export class OrganizationSlugExistsError extends AppError {
   constructor(attemptedSlug: string) {
-    super(
-      409,
-      'Unable to create a unique organization identifier',
-      'ORG_SLUG_EXISTS',
-      { attemptedSlug }
-    );
+    super(409, 'Unable to create a unique organization identifier', 'ORG_SLUG_EXISTS', {
+      attemptedSlug,
+    });
     this.name = 'OrganizationSlugExistsError';
   }
 }
@@ -35,12 +27,7 @@ export class OrganizationSlugExistsError extends AppError {
  */
 export class ReservedSlugError extends AppError {
   constructor(slug: string) {
-    super(
-      400,
-      'This organization name is reserved',
-      'RESERVED_SLUG',
-      { slug }
-    );
+    super(400, 'This organization name is reserved', 'RESERVED_SLUG', { slug });
     this.name = 'ReservedSlugError';
   }
 }
@@ -65,11 +52,7 @@ export class SystemRoleNotFoundError extends AppError {
  */
 export class RegistrationFailedError extends AppError {
   constructor(reason?: string) {
-    super(
-      500,
-      reason ?? 'Registration failed. Please try again',
-      'REGISTRATION_FAILED'
-    );
+    super(500, reason ?? 'Registration failed. Please try again', 'REGISTRATION_FAILED');
     this.name = 'RegistrationFailedError';
   }
 }
@@ -79,12 +62,7 @@ export class RegistrationFailedError extends AppError {
  */
 export class UserNotFoundError extends AppError {
   constructor(email: string) {
-    super(
-      404,
-      'User not found',
-      'USER_NOT_FOUND',
-      { email }
-    );
+    super(404, 'User not found', 'USER_NOT_FOUND', { email });
     this.name = 'UserNotFoundError';
   }
 }
@@ -94,12 +72,7 @@ export class UserNotFoundError extends AppError {
  */
 export class EmailAlreadyVerifiedError extends AppError {
   constructor(email: string) {
-    super(
-      400,
-      'Email already verified',
-      'EMAIL_ALREADY_VERIFIED',
-      { email }
-    );
+    super(400, 'Email already verified', 'EMAIL_ALREADY_VERIFIED', { email });
     this.name = 'EmailAlreadyVerifiedError';
   }
 }
@@ -109,12 +82,7 @@ export class EmailAlreadyVerifiedError extends AppError {
  */
 export class NoActiveTokenError extends AppError {
   constructor(userId: string) {
-    super(
-      400,
-      'No active verification token',
-      'NO_ACTIVE_TOKEN',
-      { userId }
-    );
+    super(400, 'No active verification token', 'NO_ACTIVE_TOKEN', { userId });
     this.name = 'NoActiveTokenError';
   }
 }
@@ -124,11 +92,7 @@ export class NoActiveTokenError extends AppError {
  */
 export class ExpiredOTPError extends AppError {
   constructor() {
-    super(
-      400,
-      'Verification code has expired',
-      'EXPIRED_OTP'
-    );
+    super(400, 'Verification code has expired', 'EXPIRED_OTP');
     this.name = 'ExpiredOTPError';
   }
 }
@@ -138,11 +102,7 @@ export class ExpiredOTPError extends AppError {
  */
 export class InvalidOTPError extends AppError {
   constructor() {
-    super(
-      400,
-      'Invalid verification code',
-      'INVALID_OTP'
-    );
+    super(400, 'Invalid verification code', 'INVALID_OTP');
     this.name = 'InvalidOTPError';
   }
 }
@@ -152,12 +112,7 @@ export class InvalidOTPError extends AppError {
  */
 export class TooManyAttemptsError extends AppError {
   constructor(userId: string) {
-    super(
-      429,
-      'Too many failed attempts',
-      'TOO_MANY_ATTEMPTS',
-      { userId }
-    );
+    super(429, 'Too many failed attempts', 'TOO_MANY_ATTEMPTS', { userId });
     this.name = 'TooManyAttemptsError';
   }
 }
@@ -167,11 +122,7 @@ export class TooManyAttemptsError extends AppError {
  */
 export class VerificationFailedError extends AppError {
   constructor(reason?: string) {
-    super(
-      500,
-      reason ?? 'Email verification failed',
-      'VERIFICATION_FAILED'
-    );
+    super(500, reason ?? 'Email verification failed', 'VERIFICATION_FAILED');
     this.name = 'VerificationFailedError';
   }
 }

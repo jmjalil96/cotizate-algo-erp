@@ -15,7 +15,7 @@ export class ProfileRepository {
     tx?: Prisma.TransactionClient
   ): Promise<Profile> {
     const client = tx ?? this.prisma;
-    
+
     return client.profile.create({
       data: {
         userId: data.userId,

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import cookieParser from 'cookie-parser';
 import express, {
   Express,
   Request,
@@ -57,7 +58,7 @@ function sanitizeValue(value: unknown, key?: string): unknown {
   if (key && SANITIZATION_EXCLUDED_FIELDS.has(key)) {
     return value;
   }
-  
+
   if (typeof value === 'string') {
     // Remove XSS attempts and trim whitespace
     return xss(value.trim()).replace(/\0/g, ''); // Also strip null bytes
@@ -191,6 +192,9 @@ export function validateParams<T extends ZodSchema>(schema: T) {
 export function applyRequestMiddleware(app: Express): void {
   // Attach request ID for tracking
   app.use(attachRequestId);
+
+  // Parse cookies
+  app.use(cookieParser());
 
   // Parse JSON with size limit
   app.use(

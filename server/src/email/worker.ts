@@ -9,8 +9,8 @@ import { renderTemplate, initializeTemplates } from './templates.js';
 
 const processEmailJob = async (job: Job<EmailJobData>): Promise<EmailJobResult> => {
   const { to, subject, template, data, from } = job.data;
-  const jobLogger = logger.child({ 
-    jobId: job.id, 
+  const jobLogger = logger.child({
+    jobId: job.id,
     jobName: job.name,
     attempt: job.attemptsMade,
     template,
@@ -21,7 +21,7 @@ const processEmailJob = async (job: Job<EmailJobData>): Promise<EmailJobResult> 
 
   try {
     const html = renderTemplate(template, data);
-    
+
     const plainText = html
       .replace(/<style[^>]*>.*?<\/style>/gs, '')
       .replace(/<script[^>]*>.*?<\/script>/gs, '')
@@ -37,74 +37,78 @@ const processEmailJob = async (job: Job<EmailJobData>): Promise<EmailJobResult> 
       text: plainText,
     });
 
-    jobLogger.info({ 
-      messageId: result.messageId,
-      accepted: result.accepted,
-      rejected: result.rejected,
-    }, 'Email job completed successfully');
+    jobLogger.info(
+      {
+        messageId: result.messageId,
+        accepted: result.accepted,
+        rejected: result.rejected,
+      },
+      'Email job completed successfully'
+    );
 
     return result;
   } catch (error) {
     jobLogger.error({ error }, 'Email job failed');
-    
+
     if (error instanceof AppError) {
       throw error;
     }
-    
+
     if (error instanceof Error) {
-      throw new AppError(
-        500,
-        `Email job processing failed: ${error.message}`,
-        'EMAIL_JOB_FAILED',
-        { 
-          jobId: job.id,
-          template,
-          error: error.message,
-        }
-      );
+      throw new AppError(500, `Email job processing failed: ${error.message}`, 'EMAIL_JOB_FAILED', {
+        jobId: job.id,
+        template,
+        error: error.message,
+      });
     }
-    
-    throw new AppError(
-      500,
-      'Email job processing failed',
-      'EMAIL_JOB_FAILED',
-      { jobId: job.id, template }
-    );
+
+    throw new AppError(500, 'Email job processing failed', 'EMAIL_JOB_FAILED', {
+      jobId: job.id,
+      template,
+    });
   }
 };
 
 export const startEmailWorker = (): ReturnType<typeof createEmailWorker> => {
   initializeTemplates();
-  
+
   const worker = createEmailWorker(processEmailJob);
-  
+
   worker.on('completed', (job) => {
-    logger.debug({ 
-      jobId: job.id,
-      jobName: job.name,
-      returnValue: job.returnvalue,
-    }, 'Job completed');
+    logger.debug(
+      {
+        jobId: job.id,
+        jobName: job.name,
+        returnValue: job.returnvalue,
+      },
+      'Job completed'
+    );
   });
-  
+
   worker.on('failed', (job, error) => {
-    logger.error({ 
-      jobId: job?.id,
-      jobName: job?.name,
-      error: error.message,
-      stack: error.stack,
-    }, 'Job failed');
+    logger.error(
+      {
+        jobId: job?.id,
+        jobName: job?.name,
+        error: error.message,
+        stack: error.stack,
+      },
+      'Job failed'
+    );
   });
-  
+
   worker.on('error', (error) => {
     logger.error({ error }, 'Worker error');
   });
-  
+
   logger.info('Email worker started');
-  
+
   return worker;
 };
 
-export const stopEmailWorker = async (worker: ReturnType<typeof createEmailWorker>): Promise<void> => {
+export const stopEmailWorker = async (
+  worker: ReturnType<typeof createEmailWorker>
+): Promise<void> => {
   logger.info('Stopping email worker...');
   await worker.close();
   logger.info('Email worker stopped');

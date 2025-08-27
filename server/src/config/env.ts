@@ -29,13 +29,13 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().url('Must be a valid URL').default('http://localhost:3000'),
   DATABASE_URL: z.string().url('Must be a valid PostgreSQL connection URL'),
   DATABASE_URL_POOLED: z.string().url().optional(),
-  
+
   // Redis configuration
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().positive().default(6379),
   REDIS_PASSWORD: z.string().optional(),
   REDIS_DB: z.coerce.number().min(0).default(0),
-  
+
   // Email configuration
   MAIL_HOST: z.string().default('localhost'),
   MAIL_PORT: z.coerce.number().positive().default(2500),
@@ -47,11 +47,16 @@ const envSchema = z.object({
     .default(false),
   MAIL_USER: z.string().optional(),
   MAIL_PASS: z.string().optional(),
-  
+
   // Queue configuration
   QUEUE_CONCURRENCY: z.coerce.number().positive().default(5),
   QUEUE_MAX_RETRIES: z.coerce.number().min(0).default(3),
   QUEUE_RETRY_DELAY: z.coerce.number().positive().default(60000), // 1 minute in ms
+
+  // JWT configuration
+  JWT_SECRET: z.string().min(32, 'JWT secret must be at least 32 characters'),
+  JWT_ISSUER: z.string().default('cotizate'),
+  JWT_AUDIENCE: z.string().default('cotizate-api'),
 });
 
 const parseEnv = (): z.infer<typeof envSchema> => {

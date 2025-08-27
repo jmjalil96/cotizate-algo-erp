@@ -5,13 +5,16 @@ A robust email service using BullMQ queues, Redis, Handlebars templates, and Nod
 ## Setup
 
 ### 1. Start Docker Services
+
 ```bash
 # Start Redis and Inbucket
 docker-compose up -d
 ```
 
 ### 2. Environment Variables
+
 Ensure these are configured in your `.env` file:
+
 ```env
 # Redis
 REDIS_HOST=localhost
@@ -24,6 +27,7 @@ MAIL_FROM=noreply@example.com
 ```
 
 ### 3. Start the Email Worker
+
 ```bash
 # Development with auto-reload
 npm run email:worker:dev
@@ -35,6 +39,7 @@ npm run email:worker
 ## Usage
 
 ### Send an Email
+
 ```typescript
 import { queueEmail } from './email/index.js';
 
@@ -45,16 +50,18 @@ const jobId = await queueEmail({
   template: 'welcome',
   data: {
     name: 'John Doe',
-    activationUrl: 'https://app.example.com/activate?token=abc123'
-  }
+    activationUrl: 'https://app.example.com/activate?token=abc123',
+  },
 });
 ```
 
 ### Available Templates
+
 - `welcome` - New user welcome email
 - `reset-password` - Password reset request
 
 ### Check Email Status
+
 ```typescript
 import { getEmailJobStatus, getQueueStats } from './email/index.js';
 
@@ -68,15 +75,19 @@ const stats = await getQueueStats();
 ## Development
 
 ### View Sent Emails
+
 Open Inbucket UI: http://localhost:9000
 
 ### Create New Templates
+
 1. Add template file to `src/email/templates/`
 2. Use Handlebars syntax
 3. Template automatically available by filename (without .hbs)
 
 ### Template Data
+
 Base layout expects:
+
 - `companyName` - Company name for header/footer
 - `currentYear` - Copyright year
 - `unsubscribeUrl` - Optional unsubscribe link
@@ -84,6 +95,7 @@ Base layout expects:
 ## Production
 
 ### Configuration
+
 ```env
 # Use real SMTP provider
 MAIL_HOST=smtp.sendgrid.net
@@ -94,6 +106,7 @@ MAIL_PASS=your_sendgrid_api_key
 ```
 
 ### Deployment
+
 1. Build: `npm run build`
 2. Run worker: `npm run email:worker:build`
 3. Monitor queue health via `getQueueStats()`

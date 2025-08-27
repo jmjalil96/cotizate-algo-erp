@@ -11,7 +11,7 @@ export class UserRoleRepository {
     tx?: Prisma.TransactionClient
   ): Promise<UserRole> {
     const client = tx ?? this.prisma;
-    
+
     return client.userRole.create({
       data: {
         userId: data.userId,

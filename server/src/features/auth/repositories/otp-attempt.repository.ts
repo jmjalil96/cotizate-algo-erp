@@ -6,12 +6,9 @@ export class OtpAttemptRepository {
   /**
    * Create new OTP attempt record for user
    */
-  async create(
-    userId: string,
-    tx?: Prisma.TransactionClient
-  ): Promise<OtpAttempt> {
+  async create(userId: string, tx?: Prisma.TransactionClient): Promise<OtpAttempt> {
     const client = tx ?? this.prisma;
-    
+
     return client.otpAttempt.create({
       data: {
         userId,
@@ -41,19 +38,16 @@ export class OtpAttemptRepository {
         },
       },
     });
-    
+
     return result.attemptCount;
   }
 
   /**
    * Reset attempt count to 0
    */
-  async reset(
-    userId: string,
-    tx?: Prisma.TransactionClient
-  ): Promise<void> {
+  async reset(userId: string, tx?: Prisma.TransactionClient): Promise<void> {
     const client = tx ?? this.prisma;
-    
+
     await client.otpAttempt.update({
       where: { userId },
       data: {
@@ -67,11 +61,11 @@ export class OtpAttemptRepository {
    */
   async isLocked(userId: string): Promise<boolean> {
     const attempt = await this.findByUserId(userId);
-    
+
     if (!attempt) {
       return false;
     }
-    
+
     return attempt.attemptCount >= 5;
   }
 }

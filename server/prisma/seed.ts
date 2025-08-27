@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 
 async function cleanDatabase(): Promise<void> {
   console.info('🧹 Cleaning database...');
-  
+
   // Delete in reverse order of dependencies
   await prisma.auditLog.deleteMany();
   await prisma.otpAttempt.deleteMany();
@@ -22,13 +22,13 @@ async function cleanDatabase(): Promise<void> {
   await prisma.profile.deleteMany();
   await prisma.user.deleteMany();
   await prisma.organization.deleteMany();
-  
+
   console.info('✅ Database cleaned');
 }
 
 async function seedSystemRoleAndPermissions(): Promise<void> {
   console.info('🌱 Seeding system role and permissions...');
-  
+
   // Create the system owner permission (*:* - all resources, all actions)
   const ownerPermission = await prisma.permission.create({
     data: {
@@ -37,9 +37,9 @@ async function seedSystemRoleAndPermissions(): Promise<void> {
       scope: 'all',
     },
   });
-  
+
   console.info('✅ Created owner permission (*:*)');
-  
+
   // Create the system owner role
   await prisma.role.create({
     data: {
@@ -53,7 +53,7 @@ async function seedSystemRoleAndPermissions(): Promise<void> {
       },
     },
   });
-  
+
   console.info('✅ Created system owner role');
 }
 
@@ -61,13 +61,13 @@ async function main(): Promise<void> {
   try {
     console.info('🚀 Starting seed process...');
     console.info(`📍 Environment: ${process.env['NODE_ENV'] ?? 'development'}`);
-    
+
     // Clean database first
     await cleanDatabase();
-    
+
     // Seed system role and permissions
     await seedSystemRoleAndPermissions();
-    
+
     console.info('🎉 Seed completed successfully!');
   } catch (error) {
     console.error('❌ Seed failed:', error);
