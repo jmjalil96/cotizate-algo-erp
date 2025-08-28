@@ -44,3 +44,19 @@ export function parseDeviceName(userAgent: string): string {
 export function generateFamilyId(): string {
   return randomUUID();
 }
+
+/**
+ * Extract device context from request
+ * Centralizes IP address, user agent, and device fingerprint extraction
+ */
+export function extractDeviceContext(req: Request): {
+  ipAddress: string;
+  userAgent: string;
+  deviceFingerprint: string;
+} {
+  const ipAddress = req.ip ?? req.socket.remoteAddress ?? 'unknown';
+  const userAgent = req.headers['user-agent'] ?? 'unknown';
+  const deviceFingerprint = generateDeviceFingerprint(req);
+
+  return { ipAddress, userAgent, deviceFingerprint };
+}

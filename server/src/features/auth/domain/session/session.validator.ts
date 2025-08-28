@@ -28,3 +28,14 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export const refreshSchema = z.object({}).strict();
 
 export type RefreshInput = z.infer<typeof refreshSchema>;
+
+/**
+ * Logout validation schema
+ */
+export const logoutSchema = z
+  .object({
+    everywhere: z.boolean().optional().default(false),
+  })
+  .strict();
+
+export type LogoutInput = z.infer<typeof logoutSchema>;

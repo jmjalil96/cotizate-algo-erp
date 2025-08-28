@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { EmailVerificationService } from '../domain/registration/email-verification.service.js';
 import { RegistrationService } from '../domain/registration/registration.service.js';
 import { LoginService } from '../domain/session/login.service.js';
+import { LogoutService } from '../domain/session/logout.service.js';
 import { RefreshService } from '../domain/session/refresh.service.js';
 import { AuditLogRepository } from '../repositories/audit-log.repository.js';
 import { EmailVerificationTokenRepository } from '../repositories/email-verification-token.repository.js';
@@ -129,5 +130,9 @@ export class ServiceFactory {
       this.getRefreshTokenRepository(),
       this.getAuditLogRepository()
     );
+  }
+
+  getLogoutService(): LogoutService {
+    return new LogoutService(this.getRefreshTokenRepository(), this.getAuditLogRepository());
   }
 }

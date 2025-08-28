@@ -196,9 +196,8 @@ export interface RefreshTokenDetails {
   userAgent: string;
   expiresAt: Date;
   revokedAt: Date | null;
-  lastUsedAt: Date | null;
-  used: boolean;
-  reuseDetected: boolean;
+  usedAt: Date | null;
+  revokedReason: string | null;
   createdAt: Date;
   user: UserWithDetails;
 }
@@ -211,9 +210,38 @@ export interface TokenFamilyInfo {
   tokens: {
     id: string;
     generation: number;
-    used: boolean;
+    usedAt: Date | null;
     revokedAt: Date | null;
     createdAt: Date;
   }[];
   suspiciousActivity: boolean;
+}
+
+/**
+ * Logout Request DTO
+ */
+export interface LogoutRequestDto {
+  everywhere?: boolean; // Optional: logout all devices (default: false)
+}
+
+/**
+ * Logout Response DTO
+ */
+export interface LogoutResponseDto {
+  success: boolean;
+  message: string;
+  data?: {
+    sessionsRevoked: number; // How many sessions/tokens were revoked
+  };
+}
+
+/**
+ * Logout Context (Internal)
+ */
+export interface LogoutContext {
+  ipAddress: string;
+  userAgent: string;
+  deviceFingerprint: string;
+  everywhere: boolean;
+  logger?: Logger;
 }

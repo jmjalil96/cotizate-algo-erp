@@ -2,20 +2,26 @@ import { Request, Response, NextFunction, RequestHandler } from 'express';
 
 import { createRequestLogger } from '../../../../config/logger.js';
 import { validateRequest } from '../../../../config/middleware/request.js';
-import { setAuthCookies, clearAuthCookies, extractRefreshToken } from '../../shared/utils/cookie.util.js';
-import { generateDeviceFingerprint, parseDeviceName } from '../../shared/utils/device.util.js';
+import {
+  setAuthCookies,
+  clearAuthCookies,
+  extractRefreshToken,
+} from '../../shared/utils/cookie.util.js';
+import { extractDeviceContext, parseDeviceName } from '../../shared/utils/device.util.js';
 
 import { LoginService } from './login.service.js';
+import { LogoutService } from './logout.service.js';
 import { RefreshService } from './refresh.service.js';
 import { OtpRequiredError } from './session.errors.js';
-import { loginSchema, refreshSchema } from './session.validator.js';
+import { loginSchema, refreshSchema, logoutSchema } from './session.validator.js';
 
-import type { SessionContext, RefreshContext } from './session.dto.js';
+import type { SessionContext, RefreshContext, LogoutContext } from './session.dto.js';
 
 export class SessionController {
   constructor(
     private readonly loginService: LoginService,
-    private readonly refreshService: RefreshService
+    private readonly refreshService: RefreshService,
+    private readonly logoutService: LogoutService
   ) {}
 
   /**
@@ -37,9 +43,7 @@ export class SessionController {
       logger.info({ email: dto.email, hasOtp: !!dto.otp }, 'Login attempt');
 
       // Build session context
-      const ipAddress = req.ip ?? req.socket.remoteAddress ?? 'unknown';
-      const userAgent = req.headers['user-agent'] ?? 'unknown';
-      const deviceFingerprint = generateDeviceFingerprint(req);
+      const { ipAddress, userAgent, deviceFingerprint } = extractDeviceContext(req);
       const deviceName = dto.deviceName ?? parseDeviceName(userAgent);
 
       const context: SessionContext = {
@@ -110,9 +114,7 @@ export class SessionController {
       logger.info({ hasToken: !!refreshToken }, 'Refresh attempt');
 
       // Build refresh context
-      const ipAddress = req.ip ?? req.socket.remoteAddress ?? 'unknown';
-      const userAgent = req.headers['user-agent'] ?? 'unknown';
-      const deviceFingerprint = generateDeviceFingerprint(req);
+      const { ipAddress, userAgent, deviceFingerprint } = extractDeviceContext(req);
 
       const context: RefreshContext = {
         ipAddress,
@@ -149,5 +151,55 @@ export class SessionController {
       // Pass to central error handler
       next(error);
     }
+  }
+
+  /**
+   * Middleware chain for logout endpoint
+   */
+  get logoutMiddleware(): RequestHandler[] {
+    return [validateRequest(logoutSchema), this.logout.bind(this)];
+  }
+
+  /**
+   * Handle logout request
+   */
+  async logout(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const logger = createRequestLogger(req.requestId);
+    const dto = req.body; // Validated body
+
+    // Note: No try-catch needed - logout never throws
+
+    // Extract refresh token from cookie
+    const refreshToken = extractRefreshToken(req);
+
+    logger.info({ hasToken: !!refreshToken, everywhere: dto.everywhere }, 'Logout attempt');
+
+    // Build logout context
+    const { ipAddress, userAgent, deviceFingerprint } = extractDeviceContext(req);
+
+    const context: LogoutContext = {
+      ipAddress,
+      userAgent,
+      deviceFingerprint,
+      everywhere: dto.everywhere ?? false,
+      logger,
+    };
+
+    // Call service (never throws)
+    const response = await this.logoutService.logout(refreshToken, dto, context);
+
+    // Clear auth cookies (always)
+    clearAuthCookies(res);
+
+    logger.info(
+      {
+        sessionsRevoked: response.data?.sessionsRevoked,
+        everywhere: dto.everywhere,
+      },
+      'Logout successful, cookies cleared'
+    );
+
+    // Send success response
+    res.status(200).json(response);
   }
 }

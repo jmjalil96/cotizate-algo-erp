@@ -51,9 +51,9 @@ export class RefreshService {
     log.debug('Checking for token reuse');
     const tokenForSecurity = await this.refreshTokenRepo.findByTokenHashForSecurity(tokenHash);
 
-    if (tokenForSecurity?.used) {
-      const timeSinceUsed = tokenForSecurity.lastUsedAt 
-        ? Date.now() - tokenForSecurity.lastUsedAt.getTime() 
+    if (tokenForSecurity?.usedAt) {
+      const timeSinceUsed = tokenForSecurity.usedAt
+        ? Date.now() - tokenForSecurity.usedAt.getTime()
         : Infinity;
 
       if (timeSinceUsed <= AUTH.REFRESH_TOKEN.ROTATION_REUSE_WINDOW) {
@@ -83,7 +83,10 @@ export class RefreshService {
         );
 
         // Revoke entire token family
-        await this.refreshTokenRepo.revokeTokenFamily(tokenForSecurity.familyId, 'reuse_detected');
+        await this.refreshTokenRepo.revokeTokenFamily(
+          tokenForSecurity.familyId,
+          AUTH.REVOCATION_REASONS.REUSE_DETECTED
+        );
 
         // Log security event
         await this.auditRepo.logTokenReuse({

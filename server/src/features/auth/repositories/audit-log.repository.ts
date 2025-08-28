@@ -120,6 +120,38 @@ export class AuditLogRepository {
     });
   }
 
+  async logLogout(
+    data: {
+      userId: string | null; // null if no token
+      action: 'USER_LOGOUT' | 'USER_LOGOUT_EVERYWHERE';
+      familyId?: string;
+      tokensRevoked: number;
+      tokenMissing?: boolean;
+      ipAddress?: string;
+      userAgent?: string;
+    },
+    tx?: Prisma.TransactionClient
+  ): Promise<AuditLog> {
+    const client = tx ?? this.prisma;
+
+    return client.auditLog.create({
+      data: {
+        userId: data.userId,
+        action: data.action,
+        resourceType: 'session',
+        resourceId: data.familyId ?? 'unknown',
+        afterData: {
+          tokensRevoked: data.tokensRevoked,
+          tokenMissing: data.tokenMissing,
+          logoutType: data.action === 'USER_LOGOUT_EVERYWHERE' ? 'everywhere' : 'single',
+          logoutTime: new Date().toISOString(),
+        },
+        ipAddress: data.ipAddress ?? null,
+        userAgent: data.userAgent ?? null,
+      },
+    });
+  }
+
   async logTokenReuse(
     data: {
       userId: string;

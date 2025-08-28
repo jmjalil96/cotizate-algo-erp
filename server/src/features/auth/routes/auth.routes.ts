@@ -23,7 +23,8 @@ export function createAuthRoutes(prismaClient: PrismaClient = prisma): Router {
 
   const sessionController = new SessionController(
     factory.getLoginService(),
-    factory.getRefreshService()
+    factory.getRefreshService(),
+    factory.getLogoutService()
   );
 
   // Define routes
@@ -31,7 +32,7 @@ export function createAuthRoutes(prismaClient: PrismaClient = prisma): Router {
   router.post('/verify-email', ...registrationController.verifyEmailMiddleware);
   router.post('/login', ...sessionController.loginMiddleware);
   router.post('/refresh', ...sessionController.refreshMiddleware);
-  // router.post('/logout', ...logoutController.logoutMiddleware);
+  router.post('/logout', ...sessionController.logoutMiddleware);
 
   return router;
 }

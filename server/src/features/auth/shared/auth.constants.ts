@@ -37,6 +37,15 @@ export const AUTH = {
     MAX_FAMILY_SIZE: 10, // Maximum tokens in a family chain
   },
 
+  REVOCATION_REASONS: {
+    REUSE_DETECTED: 'reuse_detected',
+    MANUAL_REVOKE: 'manual_revoke',
+    SECURITY_BREACH: 'security_breach',
+    LOGOUT: 'logout',
+    LOGOUT_EVERYWHERE: 'logout_everywhere',
+    EXPIRED: 'expired',
+  } as const,
+
   JWT: {
     // Algorithm and issuer/audience are set in env
     // Token expiries moved to ACCESS_TOKEN and REFRESH_TOKEN sections

@@ -1,5 +1,7 @@
 import { PrismaClient, RefreshToken, Prisma } from '@prisma/client';
 
+import { AUTH } from '../shared/auth.constants.js';
+
 import type { RefreshTokenDetails } from '../domain/session/session.dto.js';
 
 export class RefreshTokenRepository {
@@ -152,7 +154,7 @@ export class RefreshTokenRepository {
 
     // Check if token is valid (not expired, not revoked, not used)
     const now = new Date();
-    if (token.expiresAt < now || token.revokedAt || token.used) {
+    if (token.expiresAt < now || token.revokedAt || token.usedAt) {
       return null;
     }
 
@@ -173,8 +175,7 @@ export class RefreshTokenRepository {
     await client.refreshToken.update({
       where: { id: tokenId },
       data: {
-        used: true,
-        lastUsedAt: new Date(),
+        usedAt: new Date(),
       },
     });
   }
@@ -234,20 +235,71 @@ export class RefreshTokenRepository {
    */
   async revokeTokenFamily(
     familyId: string,
-    reason: 'reuse_detected' | 'manual_revoke' | 'security_breach',
+    reason: (typeof AUTH.REVOCATION_REASONS)[keyof typeof AUTH.REVOCATION_REASONS],
     tx?: Prisma.TransactionClient
-  ): Promise<void> {
+  ): Promise<number> {
     const client = tx ?? this.prisma;
     const now = new Date();
 
-    await client.refreshToken.updateMany({
+    const result = await client.refreshToken.updateMany({
       where: {
         familyId,
         revokedAt: null, // Only revoke active tokens
       },
       data: {
         revokedAt: now,
-        ...(reason === 'reuse_detected' && { reuseDetected: true }),
+        revokedReason: reason,
+      },
+    });
+
+    return result.count;
+  }
+
+  /**
+   * Revoke all tokens for a user (logout everywhere)
+   */
+  async revokeAllUserTokens(
+    userId: string,
+    reason: string = AUTH.REVOCATION_REASONS.LOGOUT_EVERYWHERE,
+    tx?: Prisma.TransactionClient
+  ): Promise<number> {
+    const client = tx ?? this.prisma;
+    const now = new Date();
+
+    const result = await client.refreshToken.updateMany({
+      where: {
+        userId,
+        revokedAt: null, // Only revoke active tokens
+      },
+      data: {
+        revokedAt: now,
+        revokedReason: reason,
+      },
+    });
+
+    return result.count;
+  }
+
+  /**
+   * Find token for logout (lighter query without full user details)
+   */
+  async findTokenByHashForLogout(tokenHash: string): Promise<{
+    id: string;
+    userId: string;
+    familyId: string;
+    usedAt: Date | null;
+    expiresAt: Date;
+    revokedAt: Date | null;
+  } | null> {
+    return this.prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      select: {
+        id: true,
+        userId: true,
+        familyId: true,
+        usedAt: true,
+        expiresAt: true,
+        revokedAt: true,
       },
     });
   }
@@ -269,7 +321,7 @@ export class RefreshTokenRepository {
     }
 
     // Token is considered reused if it's already marked as used
-    return token.used ? token : null;
+    return token.usedAt ? token : null;
   }
 
   /**

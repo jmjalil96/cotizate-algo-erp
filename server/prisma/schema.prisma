@@ -166,9 +166,8 @@ model RefreshToken {
   userAgent         String    @map("user_agent")
   expiresAt         DateTime  @map("expires_at")
   revokedAt         DateTime? @map("revoked_at")
-  lastUsedAt        DateTime? @map("last_used_at")
-  used              Boolean   @default(false)
-  reuseDetected     Boolean   @default(false) @map("reuse_detected")
+  usedAt            DateTime? @map("used_at")
+  revokedReason     String?   @map("revoked_reason")
   createdAt         DateTime  @default(now()) @map("created_at")
   
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
