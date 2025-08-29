@@ -27,15 +27,19 @@ export class OtpAttemptRepository {
   }
 
   /**
-   * Increment attempt count and return new count
+   * Increment attempt count and return new count (creates record if missing)
    */
   async increment(userId: string): Promise<number> {
-    const result = await this.prisma.otpAttempt.update({
+    const result = await this.prisma.otpAttempt.upsert({
       where: { userId },
-      data: {
+      update: {
         attemptCount: {
           increment: 1,
         },
+      },
+      create: {
+        userId,
+        attemptCount: 1,
       },
     });
 
@@ -43,14 +47,18 @@ export class OtpAttemptRepository {
   }
 
   /**
-   * Reset attempt count to 0
+   * Reset attempt count to 0 (creates record if missing)
    */
   async reset(userId: string, tx?: Prisma.TransactionClient): Promise<void> {
     const client = tx ?? this.prisma;
 
-    await client.otpAttempt.update({
+    await client.otpAttempt.upsert({
       where: { userId },
-      data: {
+      update: {
+        attemptCount: 0,
+      },
+      create: {
+        userId,
         attemptCount: 0,
       },
     });

@@ -61,23 +61,47 @@ export class EmailVerificationService {
       throw new EmailAlreadyVerifiedError(normalizedEmail);
     }
 
-    // Step 3: Check OTP attempts (lockout check)
-    const isLocked = await this.otpAttemptRepo.isLocked(user.id);
+    // Step 3: Ensure OTP attempt record exists (defensive programming)
+    let otpAttempt = await this.otpAttemptRepo.findByUserId(user.id);
 
-    if (isLocked) {
+    if (!otpAttempt) {
+      log.warn({ userId: user.id }, 'Missing OTP attempt record, creating one');
+      // Handle corrupted data - create missing record
+      otpAttempt = await this.otpAttemptRepo.create(user.id);
+    }
+
+    // Check if locked (5+ attempts)
+    if (otpAttempt.attemptCount >= 5) {
       log.error(
-        { userId: user.id, email: normalizedEmail },
+        { userId: user.id, email: normalizedEmail, attempts: otpAttempt.attemptCount },
         'Email verification blocked - too many attempts'
       );
       throw new TooManyAttemptsError(user.id);
     }
 
-    // Step 4: Get active verification token
-    log.debug({ userId: user.id }, 'Fetching active verification token');
-    const token = await this.emailTokenRepo.findActiveByUserId(user.id);
+    // Step 4: Get most recent active verification token (regardless of expiry)
+    log.debug({ userId: user.id }, 'Fetching most recent active verification token');
+    const token = await this.emailTokenRepo.findMostRecentActiveByUserId(user.id);
 
     if (!token) {
       log.error({ userId: user.id }, 'No active verification token found');
+
+      // Increment attempts for missing token
+      const newAttemptCount = await this.otpAttemptRepo.increment(user.id);
+      log.debug(
+        { userId: user.id, attempts: newAttemptCount },
+        'Incremented OTP attempts for missing token'
+      );
+
+      // Check if now locked
+      if (newAttemptCount >= 5) {
+        log.error(
+          { userId: user.id, attempts: newAttemptCount },
+          'User locked out after too many attempts with no token'
+        );
+        throw new TooManyAttemptsError(user.id);
+      }
+
       throw new NoActiveTokenError(user.id);
     }
 
@@ -92,6 +116,20 @@ export class EmailVerificationService {
         { userId: user.id, attempts: newAttemptCount },
         'Incremented OTP attempts for expired token'
       );
+
+      // Check if now locked
+      if (newAttemptCount >= 5) {
+        log.error(
+          { userId: user.id, attempts: newAttemptCount },
+          'User locked out after too many attempts with expired token'
+        );
+
+        // Invalidate all tokens when locked
+        await this.emailTokenRepo.invalidateAllForUser(user.id);
+        log.debug({ userId: user.id }, 'Invalidated all verification tokens due to lockout');
+
+        throw new TooManyAttemptsError(user.id);
+      }
 
       throw new ExpiredOTPError();
     }

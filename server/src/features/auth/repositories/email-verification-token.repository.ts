@@ -60,4 +60,22 @@ export class EmailVerificationTokenRepository {
       },
     });
   }
+
+  async findMostRecentByUserId(userId: string): Promise<EmailVerificationToken | null> {
+    return this.prisma.emailVerificationToken.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findMostRecentActiveByUserId(userId: string): Promise<EmailVerificationToken | null> {
+    return this.prisma.emailVerificationToken.findFirst({
+      where: {
+        userId,
+        isActive: true,
+        usedAt: null,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

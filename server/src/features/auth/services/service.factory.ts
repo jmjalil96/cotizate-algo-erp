@@ -1,7 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 
+import { ForgotPasswordService } from '../domain/password/forgot-password.service.js';
+import { ResetPasswordService } from '../domain/password/reset-password.service.js';
 import { EmailVerificationService } from '../domain/registration/email-verification.service.js';
 import { RegistrationService } from '../domain/registration/registration.service.js';
+import { ResendVerificationService } from '../domain/registration/resend-verification.service.js';
 import { LoginService } from '../domain/session/login.service.js';
 import { LogoutService } from '../domain/session/logout.service.js';
 import { RefreshService } from '../domain/session/refresh.service.js';
@@ -10,6 +13,7 @@ import { EmailVerificationTokenRepository } from '../repositories/email-verifica
 import { LoginSecurityRepository } from '../repositories/login-security.repository.js';
 import { OrganizationRepository } from '../repositories/organization.repository.js';
 import { OtpAttemptRepository } from '../repositories/otp-attempt.repository.js';
+import { PasswordSecurityRepository } from '../repositories/password-security.repository.js';
 import { ProfileRepository } from '../repositories/profile.repository.js';
 import { RefreshTokenRepository } from '../repositories/refresh-token.repository.js';
 import { RoleRepository } from '../repositories/role.repository.js';
@@ -31,6 +35,7 @@ export class ServiceFactory {
   private auditRepo?: AuditLogRepository;
   private otpAttemptRepo?: OtpAttemptRepository;
   private loginSecurityRepo?: LoginSecurityRepository;
+  private passwordSecurityRepo?: PasswordSecurityRepository;
   private refreshTokenRepo?: RefreshTokenRepository;
 
   constructor(private readonly prisma: PrismaClient) {}
@@ -82,6 +87,11 @@ export class ServiceFactory {
     return this.loginSecurityRepo;
   }
 
+  getPasswordSecurityRepository(): PasswordSecurityRepository {
+    this.passwordSecurityRepo ??= new PasswordSecurityRepository(this.prisma);
+    return this.passwordSecurityRepo;
+  }
+
   getRefreshTokenRepository(): RefreshTokenRepository {
     this.refreshTokenRepo ??= new RefreshTokenRepository(this.prisma);
     return this.refreshTokenRepo;
@@ -100,7 +110,8 @@ export class ServiceFactory {
       this.getEmailVerificationTokenRepository(),
       this.getAuditLogRepository(),
       this.getOtpAttemptRepository(),
-      this.getLoginSecurityRepository()
+      this.getLoginSecurityRepository(),
+      this.getPasswordSecurityRepository()
     );
   }
 
@@ -134,5 +145,34 @@ export class ServiceFactory {
 
   getLogoutService(): LogoutService {
     return new LogoutService(this.getRefreshTokenRepository(), this.getAuditLogRepository());
+  }
+
+  getResendVerificationService(): ResendVerificationService {
+    return new ResendVerificationService(
+      this.prisma,
+      this.getUserRepository(),
+      this.getEmailVerificationTokenRepository(),
+      this.getOtpAttemptRepository(),
+      this.getAuditLogRepository()
+    );
+  }
+
+  getForgotPasswordService(): ForgotPasswordService {
+    return new ForgotPasswordService(
+      this.prisma,
+      this.getUserRepository(),
+      this.getPasswordSecurityRepository(),
+      this.getAuditLogRepository()
+    );
+  }
+
+  getResetPasswordService(): ResetPasswordService {
+    return new ResetPasswordService(
+      this.prisma,
+      this.getUserRepository(),
+      this.getPasswordSecurityRepository(),
+      this.getRefreshTokenRepository(),
+      this.getAuditLogRepository()
+    );
   }
 }

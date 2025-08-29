@@ -50,6 +50,7 @@ model User {
   profile                  Profile?
   userRole                 UserRole?
   loginSecurity            LoginSecurity?
+  passwordSecurity         PasswordSecurity?
   refreshTokens            RefreshToken[]
   emailVerificationTokens  EmailVerificationToken[]
   otpAttempt               OtpAttempt?
@@ -204,9 +205,8 @@ model LoginSecurity {
   id                  String    @id @default(uuid())
   userId              String    @unique @map("user_id")
   
-  // MFA and password
+  // MFA
   mfaSecret           String?   @map("mfa_secret")
-  passwordChangedAt   DateTime  @default(now()) @map("password_changed_at")
   
   // Login attempts tracking
   requiresOtp         Boolean   @default(false) @map("requires_otp")
@@ -229,6 +229,32 @@ model LoginSecurity {
   
   @@index([userId])
   @@map("login_security")
+}
+
+model PasswordSecurity {
+  id                    String    @id @default(uuid())
+  userId                String    @unique @map("user_id")
+  
+  // Reset OTP fields
+  resetOtpHash          String?   @map("reset_otp_hash")
+  resetOtpExpiresAt     DateTime? @map("reset_otp_expires_at")
+  resetOtpSentAt        DateTime? @map("reset_otp_sent_at")
+  resetAttemptCount     Int       @default(0) @map("reset_attempt_count")
+  
+  // Password tracking
+  passwordChangedAt     DateTime  @default(now()) @map("password_changed_at")
+  lastResetAt           DateTime? @map("last_reset_at")
+  lastResetIp           String?   @map("last_reset_ip")
+  resetCount            Int       @default(0) @map("reset_count")
+  
+  // Audit fields
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("password_security")
 }
 
 model OtpAttempt {

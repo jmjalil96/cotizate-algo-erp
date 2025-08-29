@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Router } from 'express';
 
 import { prisma } from '../../../config/database.js';
+import { PasswordController } from '../domain/password/password.controller.js';
 import { RegistrationController } from '../domain/registration/registration.controller.js';
 import { SessionController } from '../domain/session/session.controller.js';
 import { ServiceFactory } from '../services/service.factory.js';
@@ -18,7 +19,8 @@ export function createAuthRoutes(prismaClient: PrismaClient = prisma): Router {
   // Initialize controllers with services from factory
   const registrationController = new RegistrationController(
     factory.getRegistrationService(),
-    factory.getEmailVerificationService()
+    factory.getEmailVerificationService(),
+    factory.getResendVerificationService()
   );
 
   const sessionController = new SessionController(
@@ -27,12 +29,20 @@ export function createAuthRoutes(prismaClient: PrismaClient = prisma): Router {
     factory.getLogoutService()
   );
 
+  const passwordController = new PasswordController(
+    factory.getForgotPasswordService(),
+    factory.getResetPasswordService()
+  );
+
   // Define routes
   router.post('/register', ...registrationController.registerMiddleware);
   router.post('/verify-email', ...registrationController.verifyEmailMiddleware);
+  router.post('/resend-verification', ...registrationController.resendVerificationMiddleware);
   router.post('/login', ...sessionController.loginMiddleware);
   router.post('/refresh', ...sessionController.refreshMiddleware);
   router.post('/logout', ...sessionController.logoutMiddleware);
+  router.post('/forgot-password', ...passwordController.forgotPasswordMiddleware);
+  router.post('/reset-password', ...passwordController.resetPasswordMiddleware);
 
   return router;
 }

@@ -120,6 +120,128 @@ export class AuditLogRepository {
     });
   }
 
+  async logPasswordResetRequest(
+    data: {
+      userId: string | null; // null if user not found
+      email: string;
+      wasLocked?: boolean;
+      attemptCountReset?: boolean;
+      ipAddress?: string;
+      userAgent?: string;
+    },
+    tx?: Prisma.TransactionClient
+  ): Promise<AuditLog> {
+    const client = tx ?? this.prisma;
+
+    return client.auditLog.create({
+      data: {
+        userId: data.userId,
+        action: 'PASSWORD_RESET_REQUESTED',
+        resourceType: 'password_reset',
+        resourceId: data.userId ?? 'unknown',
+        afterData: {
+          email: data.email,
+          wasLocked: data.wasLocked ?? false,
+          attemptCountReset: data.attemptCountReset ?? false,
+          requestTime: new Date().toISOString(),
+        },
+        ipAddress: data.ipAddress ?? null,
+        userAgent: data.userAgent ?? null,
+      },
+    });
+  }
+
+  async logPasswordResetSuccess(
+    data: {
+      userId: string;
+      email: string;
+      emailAutoVerified: boolean;
+      ipAddress?: string;
+      userAgent?: string;
+    },
+    tx?: Prisma.TransactionClient
+  ): Promise<AuditLog> {
+    const client = tx ?? this.prisma;
+
+    return client.auditLog.create({
+      data: {
+        userId: data.userId,
+        action: 'PASSWORD_RESET_SUCCESS',
+        resourceType: 'password_reset',
+        resourceId: data.userId,
+        afterData: {
+          email: data.email,
+          emailAutoVerified: data.emailAutoVerified,
+          resetTime: new Date().toISOString(),
+        },
+        ipAddress: data.ipAddress ?? null,
+        userAgent: data.userAgent ?? null,
+      },
+    });
+  }
+
+  async logPasswordResetFailed(
+    data: {
+      userId: string | null;
+      email: string;
+      reason: 'invalid_code' | 'expired_code' | 'locked';
+      attemptCount: number;
+      locked: boolean;
+      ipAddress?: string;
+      userAgent?: string;
+    },
+    tx?: Prisma.TransactionClient
+  ): Promise<AuditLog> {
+    const client = tx ?? this.prisma;
+
+    return client.auditLog.create({
+      data: {
+        userId: data.userId,
+        action: 'PASSWORD_RESET_FAILED',
+        resourceType: 'password_reset',
+        resourceId: data.userId ?? 'unknown',
+        afterData: {
+          email: data.email,
+          reason: data.reason,
+          attemptCount: data.attemptCount,
+          locked: data.locked,
+          failTime: new Date().toISOString(),
+        },
+        ipAddress: data.ipAddress ?? null,
+        userAgent: data.userAgent ?? null,
+      },
+    });
+  }
+
+  async create(
+    data: {
+      userId?: string | null;
+      action: string;
+      resourceType?: string;
+      resourceId?: string;
+      beforeData?: Prisma.InputJsonValue;
+      afterData?: Prisma.InputJsonValue;
+      ipAddress?: string | null;
+      userAgent?: string | null;
+    },
+    tx?: Prisma.TransactionClient
+  ): Promise<AuditLog> {
+    const client = tx ?? this.prisma;
+
+    return client.auditLog.create({
+      data: {
+        userId: data.userId ?? null,
+        action: data.action,
+        ...(data.resourceType && { resourceType: data.resourceType }),
+        ...(data.resourceId && { resourceId: data.resourceId }),
+        ...(data.beforeData && { beforeData: data.beforeData }),
+        ...(data.afterData && { afterData: data.afterData }),
+        ipAddress: data.ipAddress ?? null,
+        userAgent: data.userAgent ?? null,
+      },
+    });
+  }
+
   async logLogout(
     data: {
       userId: string | null; // null if no token

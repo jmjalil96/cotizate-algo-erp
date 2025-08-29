@@ -37,3 +37,22 @@ export interface VerifyEmailResponseDto {
   success: boolean;
   message: string;
 }
+
+/**
+ * Resend Verification DTOs
+ */
+
+// Request DTO - what the client sends
+export interface ResendVerificationRequestDto {
+  email: string;
+}
+
+// Response DTO - what we send back
+export interface ResendVerificationResponseDto {
+  success: boolean;
+  message: string;
+  data?: {
+    email: string;
+    cooldownSeconds?: number;
+  };
+}

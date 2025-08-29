@@ -25,8 +25,8 @@ export function hashOTP(otp: string): string {
 /**
  * Calculate OTP expiry date
  */
-export function getOTPExpiryDate(): Date {
+export function getOTPExpiryDate(expiryMinutes: number = AUTH.OTP.EXPIRY_MINUTES): Date {
   const now = new Date();
-  now.setMinutes(now.getMinutes() + AUTH.OTP.EXPIRY_MINUTES);
+  now.setMinutes(now.getMinutes() + expiryMinutes);
   return now;
 }

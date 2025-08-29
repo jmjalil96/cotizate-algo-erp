@@ -10,6 +10,7 @@ import { EmailVerificationTokenRepository } from '../../repositories/email-verif
 import { LoginSecurityRepository } from '../../repositories/login-security.repository.js';
 import { OrganizationRepository } from '../../repositories/organization.repository.js';
 import { OtpAttemptRepository } from '../../repositories/otp-attempt.repository.js';
+import { PasswordSecurityRepository } from '../../repositories/password-security.repository.js';
 import { ProfileRepository } from '../../repositories/profile.repository.js';
 import { RoleRepository } from '../../repositories/role.repository.js';
 import { UserRoleRepository } from '../../repositories/user-role.repository.js';
@@ -38,7 +39,8 @@ export class RegistrationService {
     private readonly emailTokenRepo: EmailVerificationTokenRepository,
     private readonly auditRepo: AuditLogRepository,
     private readonly otpAttemptRepo: OtpAttemptRepository,
-    private readonly loginSecurityRepo: LoginSecurityRepository
+    private readonly loginSecurityRepo: LoginSecurityRepository,
+    private readonly passwordSecurityRepo: PasswordSecurityRepository
   ) {}
 
   async register(
@@ -181,6 +183,10 @@ export class RegistrationService {
         // Create login security record for user
         log.debug({ userId: user.id }, 'Creating login security record');
         await this.loginSecurityRepo.create({ userId: user.id }, tx);
+
+        // Create password security record for user
+        log.debug({ userId: user.id }, 'Creating password security record');
+        await this.passwordSecurityRepo.create({ userId: user.id }, tx);
 
         // Log registration
         log.debug({ userId: user.id }, 'Creating audit log entry');

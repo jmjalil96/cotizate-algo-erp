@@ -5,12 +5,18 @@ import { validateRequest } from '../../../../config/middleware/request.js';
 
 import { EmailVerificationService } from './email-verification.service.js';
 import { RegistrationService } from './registration.service.js';
-import { registerSchema, verifyEmailSchema } from './registration.validator.js';
+import {
+  registerSchema,
+  verifyEmailSchema,
+  resendVerificationSchema,
+} from './registration.validator.js';
+import { ResendVerificationService } from './resend-verification.service.js';
 
 export class RegistrationController {
   constructor(
     private readonly registrationService: RegistrationService,
-    private readonly emailVerificationService: EmailVerificationService
+    private readonly emailVerificationService: EmailVerificationService,
+    private readonly resendVerificationService: ResendVerificationService
   ) {}
 
   /**
@@ -119,6 +125,48 @@ export class RegistrationController {
         success: false,
         message: 'Invalid or expired verification code',
       });
+    }
+  }
+
+  /**
+   * Middleware chain for resend verification endpoint
+   */
+  get resendVerificationMiddleware(): RequestHandler[] {
+    return [validateRequest(resendVerificationSchema), this.resendVerification.bind(this)];
+  }
+
+  /**
+   * Handle resend verification request
+   */
+  async resendVerification(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const logger = createRequestLogger(req.requestId);
+    const dto = req.body; // Extract validated body (already validated by middleware)
+
+    try {
+      // Log resend attempt
+      logger.info({ email: dto.email }, 'Resend verification attempt');
+
+      // Get context data for security tracking
+      const ipAddress = req.ip ?? req.socket.remoteAddress;
+      const userAgent = req.headers['user-agent'];
+
+      const context = {
+        ...(ipAddress && { ipAddress }),
+        ...(userAgent && { userAgent }),
+        logger, // Pass logger to service
+      };
+
+      // Call service - always returns success
+      const result = await this.resendVerificationService.resendVerification(dto, context);
+
+      // Log completion
+      logger.info({ email: dto.email }, 'Resend verification completed');
+
+      // Send success response (service always returns success for security)
+      res.status(200).json(result);
+    } catch (error) {
+      // Pass to central error handler middleware (which will log it)
+      next(error);
     }
   }
 }

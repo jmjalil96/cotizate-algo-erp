@@ -126,3 +126,30 @@ export class VerificationFailedError extends AppError {
     this.name = 'VerificationFailedError';
   }
 }
+
+/**
+ * Thrown when resend is attempted within cooldown period
+ */
+export class ResendCooldownError extends AppError {
+  constructor(cooldownSeconds: number) {
+    super(
+      429,
+      `Please wait ${cooldownSeconds} seconds before requesting another code`,
+      'RESEND_COOLDOWN',
+      {
+        cooldownSeconds,
+      }
+    );
+    this.name = 'ResendCooldownError';
+  }
+}
+
+/**
+ * Generic resend verification failure
+ */
+export class ResendFailedError extends AppError {
+  constructor(reason?: string) {
+    super(500, reason ?? 'Unable to resend verification code', 'RESEND_FAILED');
+    this.name = 'ResendFailedError';
+  }
+}

@@ -50,3 +50,12 @@ export const verifyEmailSchema = z.object({
 });
 
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+
+/**
+ * Resend verification validation schema
+ */
+export const resendVerificationSchema = z.object({
+  email: z.string().email('Invalid email address').toLowerCase().trim(),
+});
+
+export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;

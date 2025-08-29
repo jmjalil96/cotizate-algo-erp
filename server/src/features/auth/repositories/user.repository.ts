@@ -90,4 +90,46 @@ export class UserRepository {
       },
     });
   }
+
+  async findByEmailWithProfile(email: string): Promise<
+    | (User & {
+        profile: { firstName: string; lastName: string } | null;
+        organization: { name: string } | null;
+      })
+    | null
+  > {
+    return this.prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      include: {
+        profile: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        organization: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  async resetPasswordAndVerifyEmail(
+    userId: string,
+    passwordHash: string,
+    tx?: Prisma.TransactionClient
+  ): Promise<void> {
+    const client = tx ?? this.prisma;
+
+    await client.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash,
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+      },
+    });
+  }
 }

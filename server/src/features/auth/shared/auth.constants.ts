@@ -11,11 +11,20 @@ export const AUTH = {
   },
 
   PASSWORD: {
+    MIN_LENGTH: 8,
+    BCRYPT_ROUNDS: 12,
     ARGON2: {
       MEMORY_COST: 65536, // 64 MB
       TIME_COST: 3, // Number of iterations
       PARALLELISM: 4, // Degree of parallelism
     },
+  },
+
+  PASSWORD_RESET: {
+    OTP_LENGTH: 6, // 6-digit OTP
+    OTP_EXPIRY_MINUTES: 15, // 15 minutes to use the code
+    MAX_ATTEMPTS: 5, // Lock after 5 failed attempts
+    COOLDOWN_SECONDS: 60, // Minimum time between requests
   },
 
   LOGIN: {
@@ -44,6 +53,7 @@ export const AUTH = {
     LOGOUT: 'logout',
     LOGOUT_EVERYWHERE: 'logout_everywhere',
     EXPIRED: 'expired',
+    PASSWORD_RESET: 'password_reset',
   } as const,
 
   JWT: {
