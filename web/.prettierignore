@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Environment
+.env
+.env.*
+
+# Minified files
+*.min.js
+*.min.css
+
+# Generated files
+*.generated.*
+src/router/routeTree.gen.ts
+
+# Tailwind CSS
+tailwind.output.css
