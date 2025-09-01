@@ -12,9 +12,10 @@ import { useRegister } from './useRegister';
 
 interface SignupPageProps {
   onSignup?: (data: RegisterInput) => Promise<void>;
+  onNavigateToLogin?: () => void;
 }
 
-export function SignupPage({ onSignup }: SignupPageProps): React.JSX.Element {
+export function SignupPage({ onSignup, onNavigateToLogin }: SignupPageProps): React.JSX.Element {
   const { register: registerUser, isLoading, error, isSuccess, clearError } = useRegister();
 
   const {
@@ -187,13 +188,14 @@ export function SignupPage({ onSignup }: SignupPageProps): React.JSX.Element {
       <div className="mt-8 text-center">
         <p className="text-gray-600">
           ¿Ya tienes una cuenta?{' '}
-          <a
+          <button
             className="font-medium hover:underline transition-colors duration-200"
-            href="#"
             style={{ color: '#093FB4' }}
+            type="button"
+            onClick={onNavigateToLogin}
           >
             Inicia sesión
-          </a>
+          </button>
         </p>
       </div>
     </AuthLayout>

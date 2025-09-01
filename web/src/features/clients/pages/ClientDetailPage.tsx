@@ -472,7 +472,11 @@ export function ClientDetailPage({
 
   return (
     <DetailViewLayout
-      breadcrumbs={[{ label: 'Clientes', onClick: onBack }, { label: client.name }]}
+      breadcrumbs={[
+        { label: 'Core' },
+        { label: 'Clientes', onClick: onBack },
+        { label: client.name },
+      ]}
       headerActions={[
         {
           label: 'Editar',

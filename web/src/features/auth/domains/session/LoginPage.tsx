@@ -12,9 +12,15 @@ import { useLogin } from './useLogin';
 
 interface LoginPageProps {
   onLogin?: (data: LoginInput) => Promise<void>;
+  onNavigateToSignup?: () => void;
+  onNavigateToForgotPassword?: () => void;
 }
 
-export function LoginPage({ onLogin }: LoginPageProps): React.JSX.Element {
+export function LoginPage({
+  onLogin,
+  onNavigateToSignup,
+  onNavigateToForgotPassword,
+}: LoginPageProps): React.JSX.Element {
   const { login, isLoading, error, requiresOtp, clearError } = useLogin();
 
   const {
@@ -122,13 +128,14 @@ export function LoginPage({ onLogin }: LoginPageProps): React.JSX.Element {
 
         {/* Forgot Password Link */}
         <div className="flex items-center justify-end">
-          <a
+          <button
             className="text-sm font-medium hover:underline transition-colors duration-200"
-            href="#"
             style={{ color: '#093FB4' }}
+            type="button"
+            onClick={onNavigateToForgotPassword}
           >
             ¿Olvidaste tu contraseña?
-          </a>
+          </button>
         </div>
 
         {/* OTP Section - Shows when API requires it */}
@@ -175,13 +182,14 @@ export function LoginPage({ onLogin }: LoginPageProps): React.JSX.Element {
       <div className="mt-8 text-center">
         <p className="text-gray-600">
           ¿No tienes una cuenta?{' '}
-          <a
+          <button
             className="font-medium hover:underline transition-colors duration-200"
-            href="#"
             style={{ color: '#093FB4' }}
+            type="button"
+            onClick={onNavigateToSignup}
           >
             Regístrate
-          </a>
+          </button>
         </p>
       </div>
     </AuthLayout>

@@ -233,7 +233,8 @@ export function ClientEditPage({
   return (
     <EditViewLayout
       breadcrumbs={[
-        { label: 'Clientes', onClick: onCancel },
+        { label: 'Core' },
+        { label: 'Clientes', onClick: () => window.history.back() },
         { label: client.name, onClick: onCancel },
         { label: 'Editar' },
       ]}

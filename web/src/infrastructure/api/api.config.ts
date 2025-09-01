@@ -1,5 +1,7 @@
 import axios, { AxiosError } from 'axios';
 
+import { setupAuthInterceptor } from './interceptors/auth.interceptor';
+
 import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 
 /**
@@ -159,6 +161,11 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * Setup auth interceptor for handling 401s and token refresh
+ */
+setupAuthInterceptor(apiClient);
 
 /**
  * Export configured axios instance

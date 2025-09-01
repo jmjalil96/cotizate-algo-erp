@@ -27,7 +27,7 @@ coverage/
 
 # Generated files
 *.generated.*
-src/router/routeTree.gen.ts
+src/routeTree.gen.ts
 
 # Tailwind CSS
 tailwind.output.css

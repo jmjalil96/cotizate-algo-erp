@@ -2,6 +2,7 @@ import { Request, Response, NextFunction, RequestHandler } from 'express';
 
 import { createRequestLogger } from '../../../../config/logger.js';
 import { validateRequest } from '../../../../config/middleware/request.js';
+import { validateAccessToken } from '../../middleware/validate-access-token.middleware.js';
 import {
   setAuthCookies,
   clearAuthCookies,
@@ -11,17 +12,19 @@ import { extractDeviceContext, parseDeviceName } from '../../shared/utils/device
 
 import { LoginService } from './login.service.js';
 import { LogoutService } from './logout.service.js';
+import { MeService } from './me.service.js';
 import { RefreshService } from './refresh.service.js';
 import { OtpRequiredError } from './session.errors.js';
 import { loginSchema, refreshSchema, logoutSchema } from './session.validator.js';
 
-import type { SessionContext, RefreshContext, LogoutContext } from './session.dto.js';
+import type { SessionContext, RefreshContext, LogoutContext, MeContext } from './session.dto.js';
 
 export class SessionController {
   constructor(
     private readonly loginService: LoginService,
     private readonly refreshService: RefreshService,
-    private readonly logoutService: LogoutService
+    private readonly logoutService: LogoutService,
+    private readonly meService: MeService
   ) {}
 
   /**
@@ -201,5 +204,51 @@ export class SessionController {
 
     // Send success response
     res.status(200).json(response);
+  }
+
+  /**
+   * Middleware chain for me endpoint
+   */
+  get meMiddleware(): RequestHandler[] {
+    return [validateAccessToken, this.me.bind(this)];
+  }
+
+  /**
+   * Handle me request
+   */
+  async me(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const logger = createRequestLogger(req.requestId);
+
+    try {
+      // Log me request
+      logger.info({ userId: req.userId }, '/me request');
+
+      // Build context from validated JWT
+      const { ipAddress, userAgent, deviceFingerprint } = extractDeviceContext(req);
+
+      // These are guaranteed to be set by validateAccessToken middleware
+      // But TypeScript doesn't know that, so we need to check
+      if (!req.userId || !req.auth) {
+        throw new Error('Authentication middleware did not set user context');
+      }
+
+      const context: MeContext = {
+        userId: req.userId,
+        jwtPayload: req.auth,
+        ipAddress,
+        userAgent,
+        deviceFingerprint,
+        logger,
+      };
+
+      // Call service
+      const response = await this.meService.me(context);
+
+      // Send success response
+      res.status(200).json(response);
+    } catch (error) {
+      // Pass to central error handler
+      next(error);
+    }
   }
 }

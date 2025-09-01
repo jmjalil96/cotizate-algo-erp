@@ -245,3 +245,49 @@ export interface LogoutContext {
   everywhere: boolean;
   logger?: Logger;
 }
+
+/**
+ * Me Request DTOs
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface MeRequestDto {
+  // Empty - user identification comes from JWT in httpOnly cookie
+  // Body is not used for security
+}
+
+/**
+ * Me Response DTOs
+ */
+export interface MeResponseDto {
+  success: boolean;
+  message: string;
+  data?: {
+    userId: string;
+    email: string;
+    organizationId: string;
+    firstName: string;
+    lastName: string;
+    role: {
+      id: string;
+      name: string;
+      description: string;
+    };
+    permissions: {
+      resource: string;
+      action: string;
+      scope: string;
+    }[];
+  };
+}
+
+/**
+ * Me Context (Internal)
+ */
+export interface MeContext {
+  userId: string; // Extracted from JWT sub claim by middleware
+  jwtPayload: JwtPayload; // Full decoded JWT from middleware (for jti, permissions, etc.)
+  ipAddress: string;
+  userAgent: string;
+  deviceFingerprint: string;
+  logger?: Logger;
+}

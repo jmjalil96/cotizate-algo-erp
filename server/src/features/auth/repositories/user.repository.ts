@@ -60,6 +60,55 @@ export class UserRepository {
     return user as unknown as UserWithDetails;
   }
 
+  async findWithDetailsById(userId: string): Promise<UserWithDetails | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            isActive: true,
+          },
+        },
+        profile: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        userRole: {
+          select: {
+            role: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                rolePermissions: {
+                  select: {
+                    permission: {
+                      select: {
+                        resource: true,
+                        action: true,
+                        scope: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user || !user.profile || !user.userRole) {
+      return null;
+    }
+
+    return user as unknown as UserWithDetails;
+  }
+
   async create(
     data: {
       email: string;

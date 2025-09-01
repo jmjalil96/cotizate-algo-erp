@@ -150,3 +150,40 @@ export class RefreshFailedError extends AppError {
     this.name = 'RefreshFailedError';
   }
 }
+
+/**
+ * Thrown for invalid or expired access tokens
+ * Used by /me endpoint and any authenticated routes
+ */
+export class InvalidAccessTokenError extends AppError {
+  constructor() {
+    super(401, 'Invalid or expired access token', 'INVALID_ACCESS_TOKEN');
+    this.name = 'InvalidAccessTokenError';
+  }
+}
+
+/**
+ * Thrown when JWT is valid but user no longer exists
+ * Indicates deleted user with valid token (rare edge case)
+ */
+export class UserNotFoundError extends AppError {
+  constructor(userId: string) {
+    super(
+      401,
+      'Authentication required', // Generic message to prevent enumeration
+      'USER_NOT_FOUND',
+      { userId } // Internal logging only
+    );
+    this.name = 'UserNotFoundError';
+  }
+}
+
+/**
+ * Generic /me endpoint failure for unexpected errors
+ */
+export class MeFailedError extends AppError {
+  constructor(reason?: string) {
+    super(500, 'Unable to retrieve user details', 'ME_FAILED', reason ? { reason } : undefined);
+    this.name = 'MeFailedError';
+  }
+}

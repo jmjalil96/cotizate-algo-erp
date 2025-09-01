@@ -26,7 +26,8 @@ export function createAuthRoutes(prismaClient: PrismaClient = prisma): Router {
   const sessionController = new SessionController(
     factory.getLoginService(),
     factory.getRefreshService(),
-    factory.getLogoutService()
+    factory.getLogoutService(),
+    factory.getMeService()
   );
 
   const passwordController = new PasswordController(
@@ -41,6 +42,7 @@ export function createAuthRoutes(prismaClient: PrismaClient = prisma): Router {
   router.post('/login', ...sessionController.loginMiddleware);
   router.post('/refresh', ...sessionController.refreshMiddleware);
   router.post('/logout', ...sessionController.logoutMiddleware);
+  router.get('/me', ...sessionController.meMiddleware);
   router.post('/forgot-password', ...passwordController.forgotPasswordMiddleware);
   router.post('/reset-password', ...passwordController.resetPasswordMiddleware);
 

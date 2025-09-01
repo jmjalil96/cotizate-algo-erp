@@ -7,6 +7,7 @@ import { RegistrationService } from '../domain/registration/registration.service
 import { ResendVerificationService } from '../domain/registration/resend-verification.service.js';
 import { LoginService } from '../domain/session/login.service.js';
 import { LogoutService } from '../domain/session/logout.service.js';
+import { MeService } from '../domain/session/me.service.js';
 import { RefreshService } from '../domain/session/refresh.service.js';
 import { AuditLogRepository } from '../repositories/audit-log.repository.js';
 import { EmailVerificationTokenRepository } from '../repositories/email-verification-token.repository.js';
@@ -174,5 +175,9 @@ export class ServiceFactory {
       this.getRefreshTokenRepository(),
       this.getAuditLogRepository()
     );
+  }
+
+  getMeService(): MeService {
+    return new MeService(this.getUserRepository());
   }
 }

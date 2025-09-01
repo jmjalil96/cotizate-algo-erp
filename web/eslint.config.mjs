@@ -13,13 +13,7 @@ import globals from 'globals';
 export default tseslint.config(
   // Ignore patterns
   {
-    ignores: [
-      'dist/**',
-      'node_modules/**',
-      '*.config.js',
-      '*.config.mjs',
-      'src/router/routeTree.gen.ts',
-    ],
+    ignores: ['dist/**', 'node_modules/**', '*.config.js', '*.config.mjs', 'src/routeTree.gen.ts'],
   },
 
   // Base configs
