@@ -18,23 +18,22 @@ interface LoginSearch {
 function LoginPageWrapper(): React.JSX.Element {
   const navigate = useNavigate();
   const searchParams = useSearch({ from: '/_auth/login' }) as LoginSearch;
-  const { login } = useAuthStore();
+  const { login, isLoading, error, requiresOtp, clearError, isAuthenticated } = useAuthStore();
+
+  // Navigate after successful login
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate({ to: searchParams?.redirect ?? '/dashboard' });
+    }
+  }, [isAuthenticated, navigate, searchParams?.redirect]);
 
   const handleLogin = async (data: LoginInput): Promise<void> => {
-    try {
-      // CRITICAL: Update the auth store with login
-      await login({
-        email: data.email,
-        password: data.password,
-        otp: data.otp,
-      });
-
-      // After successful login (store will be updated)
-      await navigate({ to: searchParams?.redirect ?? '/dashboard' });
-    } catch (error) {
-      // Error is handled by the store and LoginPage component
-      console.error('Login failed:', error);
-    }
+    // Just call the store's login - it handles everything
+    await login({
+      email: data.email,
+      password: data.password,
+      otp: data.otp,
+    });
   };
 
   const handleNavigateToSignup = (): void => {
@@ -48,6 +47,10 @@ function LoginPageWrapper(): React.JSX.Element {
   // LoginPage already includes AuthLayout internally
   return (
     <LoginPage
+      clearError={clearError}
+      error={error}
+      isLoading={isLoading}
+      requiresOtp={requiresOtp}
       onLogin={handleLogin}
       onNavigateToForgotPassword={handleNavigateToForgotPassword}
       onNavigateToSignup={handleNavigateToSignup}

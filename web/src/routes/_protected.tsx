@@ -34,7 +34,17 @@ const MODULE_DEFAULT_PAGES: Record<Module, string | null> = {
 function ProtectedLayout(): React.JSX.Element {
   const router = useRouter();
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const { user, logout, isAuthenticated } = useAuthStore();
+
+  // Reactively check auth status and redirect if not authenticated
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      router.navigate({
+        to: '/login',
+        search: { redirect: location.pathname },
+      });
+    }
+  }, [isAuthenticated, router, location.pathname]);
 
   // Extract module with type safety
   const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -61,7 +71,7 @@ function ProtectedLayout(): React.JSX.Element {
 
   const handleSignOut = async (): Promise<void> => {
     await logout();
-    await router.navigate({ to: '/login' });
+    // Navigation to login is handled by the useEffect watching isAuthenticated
   };
 
   return (

@@ -1,4 +1,4 @@
-import apiService from '../../../../infrastructure/api/api.service';
+import apiClient from '../../../../infrastructure/api/api.config';
 
 import type { RegisterInput } from './registration.schema';
 import type { VerifyEmailInput, ResendVerificationInput } from './verify-email.schema';
@@ -54,7 +54,7 @@ class RegistrationService {
    * Register new user and organization
    */
   async register(data: RegisterInput): Promise<RegisterResponse> {
-    const response = await apiService.post<RegisterResponse>('/auth/register', data);
+    const response = await apiClient.post<RegisterResponse>('/auth/register', data);
     return response.data;
   }
 
@@ -62,7 +62,7 @@ class RegistrationService {
    * Verify email with OTP code
    */
   async verifyEmail(data: VerifyEmailInput): Promise<VerifyEmailResponse> {
-    const response = await apiService.post<VerifyEmailResponse>('/auth/verify-email', data);
+    const response = await apiClient.post<VerifyEmailResponse>('/auth/verify-email', data);
     return response.data;
   }
 
@@ -70,7 +70,7 @@ class RegistrationService {
    * Resend verification code
    */
   async resendVerification(data: ResendVerificationInput): Promise<ResendVerificationResponse> {
-    const response = await apiService.post<ResendVerificationResponse>(
+    const response = await apiClient.post<ResendVerificationResponse>(
       '/auth/resend-verification',
       data
     );

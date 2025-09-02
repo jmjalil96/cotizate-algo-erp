@@ -22,7 +22,7 @@ export const COOKIE_OPTIONS = {
     secure: env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
-    path: `${env.API_PREFIX}/auth/refresh`, // Only sent to refresh endpoint
+    path: `${env.API_PREFIX}/auth`, // Available to all auth endpoints
   } as CookieOptions,
 };
 
@@ -39,7 +39,7 @@ export function setAuthCookies(res: Response, tokens: TokenPair): void {
  */
 export function clearAuthCookies(res: Response): void {
   res.clearCookie(AUTH.COOKIES.ACCESS_TOKEN_NAME, { path: '/' });
-  res.clearCookie(AUTH.COOKIES.REFRESH_TOKEN_NAME, { path: `${env.API_PREFIX}/auth/refresh` });
+  res.clearCookie(AUTH.COOKIES.REFRESH_TOKEN_NAME, { path: `${env.API_PREFIX}/auth` });
 }
 
 /**

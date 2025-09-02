@@ -1,4 +1,4 @@
-import apiService from '../../../../infrastructure/api/api.service';
+import apiClient from '../../../../infrastructure/api/api.config';
 
 import type { ForgotPasswordInput, ResetPasswordInput } from './password-recovery.schema';
 
@@ -35,7 +35,7 @@ class PasswordRecoveryService {
    * Request password reset code
    */
   async forgotPassword(data: ForgotPasswordInput): Promise<ForgotPasswordResponse> {
-    const response = await apiService.post<ForgotPasswordResponse>('/auth/forgot-password', data);
+    const response = await apiClient.post<ForgotPasswordResponse>('/auth/forgot-password', data);
     return response.data;
   }
 
@@ -43,7 +43,7 @@ class PasswordRecoveryService {
    * Reset password with OTP code
    */
   async resetPassword(data: ResetPasswordInput): Promise<ResetPasswordResponse> {
-    const response = await apiService.post<ResetPasswordResponse>('/auth/reset-password', data);
+    const response = await apiClient.post<ResetPasswordResponse>('/auth/reset-password', data);
     return response.data;
   }
 }

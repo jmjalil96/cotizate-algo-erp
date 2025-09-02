@@ -8,6 +8,7 @@ import type {
   LoginCredentials,
   LoginResponse,
   RefreshResponse,
+  MeResponse,
   LogoutResponse,
 } from './auth.types';
 
@@ -16,6 +17,7 @@ const AUTH_ENDPOINTS = {
   LOGIN: '/auth/login',
   LOGOUT: '/auth/logout',
   REFRESH: '/auth/refresh',
+  ME: '/auth/me',
 } as const;
 
 // Timeout for auth endpoints (15 seconds)
@@ -74,12 +76,32 @@ export async function refreshApi(): Promise<RefreshResponse> {
 }
 
 /**
+ * Fetch current user API call
+ * Note: Access token is sent automatically via httpOnly cookie
+ */
+export async function meApi(): Promise<MeResponse> {
+  const response = await apiClient.get<MeResponse>(AUTH_ENDPOINTS.ME, {
+    timeout: AUTH_TIMEOUT,
+    // withCredentials is already true in api.config
+  });
+
+  return response.data;
+}
+
+/**
  * Check if a path is an auth endpoint (to skip refresh attempts)
+ * Note: /auth/me is NOT included, so 401s will trigger refresh
  */
 export function isAuthEndpoint(url?: string): boolean {
   if (!url) return false;
 
-  return Object.values(AUTH_ENDPOINTS).some((endpoint) => url.includes(endpoint));
+  // Exclude /auth/me from this check so it can trigger refresh on 401
+  const skipRefreshEndpoints = [
+    AUTH_ENDPOINTS.LOGIN,
+    AUTH_ENDPOINTS.LOGOUT,
+    AUTH_ENDPOINTS.REFRESH,
+  ];
+  return skipRefreshEndpoints.some((endpoint) => url.includes(endpoint));
 }
 
 /**
@@ -93,7 +115,9 @@ export function isSafeMethod(method?: string): boolean {
 /**
  * Transform API user data to store user format
  */
-export function transformUserData(data: LoginResponse['data'] | RefreshResponse['data']): {
+export function transformUserData(
+  data: LoginResponse['data'] | RefreshResponse['data'] | MeResponse['data']
+): {
   id: string;
   email: string;
   organizationId: string;

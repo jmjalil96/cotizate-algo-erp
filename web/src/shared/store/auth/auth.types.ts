@@ -80,6 +80,23 @@ export interface RefreshResponse {
 }
 
 /**
+ * Me API response - matches backend MeResponseDto
+ */
+export interface MeResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    userId: string;
+    email: string;
+    organizationId: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    permissions: Permission[];
+  };
+}
+
+/**
  * Logout API response
  */
 export interface LogoutResponse {
@@ -99,6 +116,7 @@ export interface AuthState {
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
+  requiresOtp: boolean;
 }
 
 /**

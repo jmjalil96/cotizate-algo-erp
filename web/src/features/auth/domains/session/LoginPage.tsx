@@ -8,21 +8,26 @@ import { AuthLayout } from '../../../../shared/components/layouts';
 import { Button, Input, Logo, OTPInput } from '../../../../shared/components/ui';
 
 import { loginSchema, type LoginInput } from './session.schema';
-import { useLogin } from './useLogin';
 
 interface LoginPageProps {
   onLogin?: (data: LoginInput) => Promise<void>;
+  isLoading?: boolean;
+  error?: string | null;
+  requiresOtp?: boolean;
+  clearError?: () => void;
   onNavigateToSignup?: () => void;
   onNavigateToForgotPassword?: () => void;
 }
 
 export function LoginPage({
   onLogin,
+  isLoading = false,
+  error = null,
+  requiresOtp = false,
+  clearError,
   onNavigateToSignup,
   onNavigateToForgotPassword,
 }: LoginPageProps): React.JSX.Element {
-  const { login, isLoading, error, requiresOtp, clearError } = useLogin();
-
   const {
     register,
     handleSubmit,
@@ -44,7 +49,7 @@ export function LoginPage({
 
   // Clear error when user starts typing
   useEffect(() => {
-    if (error) {
+    if (error && clearError) {
       clearError();
     }
   }, [otpValue, error, clearError]);
@@ -55,25 +60,12 @@ export function LoginPage({
   }, [emailValue, passwordValue, setValue]);
 
   const onSubmit = async (data: LoginInput): Promise<void> => {
-    try {
-      // Call the login function from the hook
-      const response = await login(data);
-
-      if (response.success) {
-        // Login successful - log user data for now (no state management yet)
-        console.info('Login successful!', response.data);
-
-        // Call optional onLogin prop if provided
-        if (onLogin) {
-          await onLogin(data);
-        }
-      }
-      // If OTP is required, the form stays open and requiresOtp will be true
-      // The user will see the OTP field and can enter the code
-    } catch (error) {
-      // Error is already handled by the hook and displayed via the error state
-      console.error('Login error:', error);
+    // Call the onLogin prop if provided
+    if (onLogin) {
+      await onLogin(data);
     }
+    // All state management (loading, error, OTP) is handled by the store
+    // and passed down as props
   };
 
   const handleOTPChange = (value: string): void => {

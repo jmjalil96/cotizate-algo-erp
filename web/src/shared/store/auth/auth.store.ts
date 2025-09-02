@@ -7,7 +7,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 
 import { getErrorMessage, getErrorCode } from '../../../infrastructure/api/api.config';
 
-import { loginApi, logoutApi, refreshApi, transformUserData } from './auth.service';
+import { loginApi, logoutApi, refreshApi, meApi, transformUserData } from './auth.service';
 
 import type { AuthStore, LoginCredentials } from './auth.types';
 
@@ -23,17 +23,23 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: false,
       isInitialized: false,
       error: null,
+      requiresOtp: false,
 
       // Login action
       login: async (credentials: LoginCredentials) => {
-        set({ isLoading: true, error: null });
+        set({ isLoading: true, error: null, requiresOtp: false });
 
         try {
           const response = await loginApi(credentials);
 
           if (response.requiresOtp) {
-            set({ isLoading: false });
-            throw new Error('OTP_REQUIRED');
+            // OTP required - don't throw, just update state
+            set({
+              isLoading: false,
+              requiresOtp: true,
+              error: null,
+            });
+            return; // Return early, waiting for OTP
           }
 
           if (response.success && response.data) {
@@ -44,6 +50,7 @@ export const useAuthStore = create<AuthStore>()(
                 isAuthenticated: true,
                 isLoading: false,
                 error: null,
+                requiresOtp: false,
               });
             } else {
               throw new Error('Invalid user data received');
@@ -57,14 +64,16 @@ export const useAuthStore = create<AuthStore>()(
 
           // Handle specific error codes
           let userMessage = errorMessage;
-          if (errorCode === 'OTP_REQUIRED') {
-            userMessage = 'Please enter the OTP sent to your email';
-          } else if (errorCode === 'INVALID_CREDENTIALS') {
+          if (errorCode === 'INVALID_CREDENTIALS') {
             userMessage = 'Invalid email or password';
+          } else if (errorCode === 'INVALID_OTP') {
+            userMessage = 'Invalid or expired verification code';
           } else if (errorCode === 'ACCOUNT_INACTIVE') {
             userMessage = 'Your account is inactive. Please contact support.';
           } else if (errorCode === 'EMAIL_NOT_VERIFIED') {
             userMessage = 'Please verify your email before logging in';
+          } else if (errorCode === 'NETWORK_ERROR') {
+            userMessage = 'Unable to connect to server. Please check your connection.';
           }
 
           set({
@@ -72,9 +81,10 @@ export const useAuthStore = create<AuthStore>()(
             error: userMessage,
             isAuthenticated: false,
             user: null,
+            requiresOtp: false,
           });
 
-          throw error;
+          // Don't re-throw - let the component handle via error state
         }
       },
 
@@ -94,6 +104,7 @@ export const useAuthStore = create<AuthStore>()(
             isAuthenticated: false,
             isLoading: false,
             error: null,
+            requiresOtp: false,
           });
         }
       },
@@ -141,19 +152,50 @@ export const useAuthStore = create<AuthStore>()(
         // If already initialized, skip
         if (state.isInitialized) return;
 
-        // If we have a stored user, validate the session
-        if (state.user) {
-          try {
-            await get().refreshSession();
-          } catch {
-            // Session invalid, clear storage
-            console.info('Session validation failed, clearing auth');
+        // Always validate session on boot using /auth/me
+        try {
+          const response = await meApi();
+
+          if (response.success && response.data) {
+            const user = transformUserData(response.data);
+            if (user) {
+              set({
+                user,
+                isAuthenticated: true,
+                error: null,
+              });
+            } else {
+              throw new Error('Invalid user data received from /me');
+            }
+          } else {
+            throw new Error(response.message || 'Failed to fetch user details');
+          }
+        } catch (error) {
+          const errorCode = getErrorCode(error);
+          const errorMessage = getErrorMessage(error);
+
+          // Handle specific error codes
+          if (errorCode === 'INVALID_ACCESS_TOKEN' || errorCode === 'TOKEN_EXPIRED') {
+            // Access token invalid/expired, will be handled by interceptor
+            // which will attempt refresh and retry /me
+            console.info('Access token invalid/expired on boot, interceptor will handle refresh');
+          } else if (errorCode === 'ACCOUNT_INACTIVE' || errorCode === 'EMAIL_NOT_VERIFIED') {
+            // Account issues - clear auth completely
+            console.warn(`Account issue on boot: ${errorCode}`);
+            get().clearAuth();
+          } else if (errorCode === 'INVALID_REFRESH_TOKEN' || errorCode === 'SESSION_EXPIRED') {
+            // Refresh also failed - clear auth
+            console.info('Session expired, clearing auth');
+            get().clearAuth();
+          } else {
+            // Other errors (network, etc.) - clear auth to be safe
+            console.error('Auth initialization error:', errorMessage);
             get().clearAuth();
           }
+        } finally {
+          // Always mark as initialized, regardless of outcome
+          set({ isInitialized: true });
         }
-
-        // Mark as initialized
-        set({ isInitialized: true });
       },
 
       // Clear auth state
@@ -162,6 +204,7 @@ export const useAuthStore = create<AuthStore>()(
           user: null,
           isAuthenticated: false,
           error: null,
+          requiresOtp: false,
         });
       },
 
